@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大型アップデートのお知らせ (Ver 26.1) | 株シミュレーター</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+        }
+        body {
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .update-card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            max-width: 480px;
+            width: 100%;
+            padding: 32px 24px;
+            text-align: center;
+        }
+        .badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: #ffffff;
+            font-size: 0.8rem;
+            font-weight: bold;
+            padding: 6px 14px;
+            border-radius: 20px;
+            letter-spacing: 0.05em;
+            margin-bottom: 16px;
+        }
+        h1 {
+            font-size: 1.5rem;
+            color: #111827;
+            margin-bottom: 8px;
+        }
+        .version {
+            font-size: 0.9rem;
+            color: #2563eb;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .description {
+            color: #374151;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+        .feature-box {
+            text-align: left;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+        }
+        .feature-box h2 {
+            font-size: 0.95rem;
+            color: #1f2937;
+            margin-bottom: 12px;
+        }
+        .feature-box ul {
+            list-style: none;
+        }
+        .feature-box li {
+            font-size: 0.875rem;
+            color: #4b5563;
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+        }
+        .feature-box li:last-child {
+            margin-bottom: 0;
+        }
+        .feature-box li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #2563eb;
+            font-weight: bold;
+        }
+        /* ページ移動ボタンのスタイル */
+        .btn {
+            display: block;
+            width: 100%;
+            background-color: #2563eb;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 14px 0;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+        .btn:hover {
+            background-color: #1d4ed8;
+        }
+        .btn:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="update-card">
+        <span class="badge">MAJOR UPDATE</span>
+        <h1>大型アップデート完了</h1>
+        <p class="version">Ver 26.1 リリースのお知らせ</p>
+        
+        <p class="description">
+            2026年8月15日より、株シミュレーターは<br>
+            <strong>新しいページ（新URL）へ移行いたしました。</strong><br>
+            お手数ですが、下のボタンより新ページへアクセスしてください。
+        </p>
+
+        <div class="feature-box">
+            <h2>✨ Ver 26.1 主な更新内容</h2>
+            <ul>
+                <li>新URLページへの全面リニューアル移行</li>
+                <li>最新のチャート・株価データ表示に対応</li>
+                <li>操作画面（UI）のデザインおよび動作速度の改善</li>
+                <li>その他不具合の修正とシステム安定化</li>
+            </ul>
+        </div>
+
+        <a href="https://example.com" class="btn">新しいページへ移動する</a>
+    </div>
+
+</body>
+</html>
