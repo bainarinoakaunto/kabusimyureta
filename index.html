@@ -1,0 +1,67 @@
+<div class="btn-group">
+    <a href="setumei.html" class="btn-guide">
+        <i class="fa-solid fa-book-open"></i> まず説明を読む (setumei.html)
+    </a>
+    
+    <a href="YOUR_SIMULATOR_URL" class="btn-launch">
+        <i class="fa-solid fa-play"></i> 株シミュレーターを起動
+    </a>
+</div>
+
+<style>
+.btn-group {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 30px 0;
+}
+
+/* 説明ボタン（目立つメインデザイン） */
+.btn-guide {
+    background: #3b82f6;
+    color: #ffffff;
+    padding: 16px 32px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s ease;
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+}
+
+.btn-guide:hover {
+    background: #2563eb;
+    transform: translateY(-2px);
+}
+
+/* シミュレーター起動ボタン（サブデザイン） */
+.btn-launch {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #f8fafc;
+    padding: 16px 32px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s ease;
+}
+
+.btn-launch:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+@media (max-width: 480px) {
+    .btn-group { flex-direction: column; }
+    .btn-guide, .btn-launch { width: 100%; justify-content: center; }
+}
+</style>
