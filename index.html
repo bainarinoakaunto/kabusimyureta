@@ -1,67 +1,669 @@
-<div class="btn-group">
-    <a href="setumei.html" class="btn-guide">
-        <i class="fa-solid fa-book-open"></i> まず説明を読む (setumei.html)
-    </a>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>株シミュレーター Ver 26.1 | 公式サイト</title>
+    <meta name="description" content="24時間マーケットアクセス、23銘柄、夜間PTS取引対応。ブラウザで即座に試せる高精度株式トレーディング・シミュレーター。">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;600;700;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
-    <a href="YOUR_SIMULATOR_URL" class="btn-launch">
-        <i class="fa-solid fa-play"></i> 株シミュレーターを起動
-    </a>
-</div>
+    <style>
+        :root {
+            --bg-dark: #020617;
+            --bg-card: rgba(15, 23, 42, 0.7);
+            --bg-card-hover: rgba(30, 41, 59, 0.8);
+            --primary: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.25);
+            --accent-gold: #fbbf24;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
 
-<style>
-.btn-group {
-    display: flex;
-    gap: 16px;
-    justify-content: center;
-    align-items: center;
-    flex-wrap: wrap;
-    margin: 30px 0;
-}
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            scroll-behavior: smooth;
+        }
 
-/* 説明ボタン（目立つメインデザイン） */
-.btn-guide {
-    background: #3b82f6;
-    color: #ffffff;
-    padding: 16px 32px;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 700;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    transition: all 0.2s ease;
-    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
-}
+        body {
+            font-family: 'Urbanist', 'Noto Sans JP', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
 
-.btn-guide:hover {
-    background: #2563eb;
-    transform: translateY(-2px);
-}
+        .bg-blur-1 {
+            position: absolute;
+            top: -100px;
+            left: -100px;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .bg-blur-2 {
+            position: absolute;
+            top: 600px;
+            right: -100px;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(251, 191, 36, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
 
-/* シミュレーター起動ボタン（サブデザイン） */
-.btn-launch {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: #f8fafc;
-    padding: 16px 32px;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 700;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    transition: all 0.2s ease;
-}
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
 
-.btn-launch:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateY(-2px);
-}
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(2, 6, 23, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 100;
+        }
+        .nav-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 72px;
+        }
+        .logo {
+            font-size: 20px;
+            font-weight: 900;
+            color: #fff;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo span {
+            background: #2563eb;
+            color: #fff;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+        }
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+        }
+        .nav-links a {
+            color: var(--text-sub);
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover {
+            color: var(--text-main);
+        }
 
-@media (max-width: 480px) {
-    .btn-group { flex-direction: column; }
-    .btn-guide, .btn-launch { width: 100%; justify-content: center; }
-}
-</style>
+        .header-btns {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .btn-header-guide {
+            background: var(--primary);
+            color: #fff;
+            padding: 9px 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 13px;
+            text-decoration: none;
+            transition: all 0.2s;
+            box-shadow: 0 4px 14px var(--primary-glow);
+        }
+        .btn-header-guide:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+        }
+
+        .btn-header-launch {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 9px 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 13px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .btn-header-launch:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .hero {
+            padding: 160px 0 100px;
+            text-align: center;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: var(--primary);
+            font-size: 13px;
+            font-weight: 700;
+            padding: 6px 16px;
+            border-radius: 50px;
+            margin-bottom: 24px;
+        }
+        .hero-title {
+            font-size: 56px;
+            font-weight: 900;
+            line-height: 1.15;
+            margin-bottom: 24px;
+            letter-spacing: -1px;
+        }
+        .hero-title span {
+            background: linear-gradient(135deg, #fff 30%, var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-desc {
+            font-size: 20px;
+            color: var(--text-sub);
+            max-width: 720px;
+            margin: 0 auto 40px;
+        }
+
+        /* ヒーローエリア ボタン（説明優先） */
+        .hero-btns {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-bottom: 60px;
+            flex-wrap: wrap;
+        }
+        .btn-main-guide {
+            background: var(--primary);
+            color: #fff;
+            padding: 16px 36px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.2s;
+            box-shadow: 0 10px 25px var(--primary-glow);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-main-guide:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+        }
+        .btn-sub-launch {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-sub-launch:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .stats-bar {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px 40px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            backdrop-filter: blur(8px);
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+        .stat-val {
+            font-size: 28px;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        section {
+            padding: 100px 0;
+        }
+        .section-title {
+            text-align: center;
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+        .section-sub {
+            text-align: center;
+            color: var(--text-sub);
+            font-size: 18px;
+            margin-bottom: 60px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 36px 28px;
+            transition: all 0.3s;
+        }
+        .feature-card:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--primary);
+            transform: translateY(-5px);
+        }
+        .feature-icon {
+            font-size: 32px;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+        .feature-card h3 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .feature-card p {
+            color: var(--text-sub);
+            font-size: 15px;
+            line-height: 1.7;
+        }
+
+        .sessions-wrapper {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+        .session-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 32px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .session-card.highlight {
+            border-color: rgba(251, 191, 36, 0.4);
+            background: linear-gradient(180deg, rgba(251, 191, 36, 0.05) 0%, var(--bg-card) 100%);
+        }
+        .session-card i {
+            font-size: 36px;
+            margin-bottom: 16px;
+            color: var(--primary);
+        }
+        .session-card.highlight i {
+            color: var(--accent-gold);
+        }
+        .session-tag {
+            font-size: 13px;
+            color: var(--text-sub);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        .session-time {
+            font-size: 32px;
+            font-weight: 800;
+            color: #fff;
+        }
+        .session-card.highlight .session-time {
+            color: var(--accent-gold);
+        }
+
+        .stock-list {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+        .stock-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .stock-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+        .stock-code {
+            font-size: 12px;
+            color: var(--text-sub);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        .stock-name {
+            font-size: 18px;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+        .stock-price {
+            font-size: 24px;
+            font-weight: 800;
+        }
+        .stock-change {
+            font-size: 14px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .up { color: var(--accent-green); }
+        .down { color: var(--accent-red); }
+
+        .notice-section {
+            background: rgba(239, 68, 68, 0.05);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 24px;
+            padding: 40px;
+            margin-top: 40px;
+        }
+        .notice-head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--accent-red);
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        .notice-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        .notice-box h4 {
+            font-size: 17px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+        .notice-box p {
+            font-size: 14px;
+            color: var(--text-sub);
+            line-height: 1.6;
+        }
+
+        footer {
+            border-top: 1px solid var(--border-color);
+            padding: 60px 0;
+            color: var(--text-sub);
+            font-size: 14px;
+        }
+        .footer-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        @media (max-width: 992px) {
+            .hero-title { font-size: 40px; }
+            .stats-bar { grid-template-columns: repeat(2, 1fr); gap: 24px; }
+            .features-grid, .sessions-wrapper { grid-template-columns: 1fr; }
+            .stock-list { grid-template-columns: repeat(2, 1fr); }
+            .notice-grid { grid-template-columns: 1fr; }
+            .nav-links { display: none; }
+            .hero-btns { flex-direction: column; }
+            .btn-main-guide, .btn-sub-launch { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-blur-1"></div>
+<div class="bg-blur-2"></div>
+
+<header>
+    <div class="container nav-wrapper">
+        <a href="#" class="logo">
+            <i class="fa-solid fa-chart-line" style="color: var(--primary);"></i>
+            株シミュレーター <span>VER 26.1</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="#features">主要機能</a></li>
+            <li><a href="#sessions">取引時間</a></li>
+            <li><a href="#stocks">収録銘柄</a></li>
+            <li><a href="#notices">注意事項</a></li>
+        </ul>
+        <div class="header-btns">
+            <a href="setumei.html" class="btn-header-guide"><i class="fa-solid fa-book-open"></i> 説明を見る</a>
+            <a href="simulator.html" class="btn-header-launch"><i class="fa-solid fa-play"></i> 起動</a>
+        </div>
+    </div>
+</header>
+
+<section class="hero">
+    <div class="container">
+        <div class="badge">
+            <i class="fa-solid fa-sparkles"></i> MAJOR UPDATE VER 26.1 RELEASED
+        </div>
+        <h1 class="hero-title">
+            投資を、科学する。<br>
+            <span>次世代マーケット・トレーディング</span>
+        </h1>
+        <p class="hero-desc">
+            全方位の市場アクセス、リアルタイム・ローソク足、動的ニュースアルゴリズム。<br>
+            登録不要・ブラウザを開くだけで、本格的な株式投資を即座に体験。
+        </p>
+
+        <div class="hero-btns">
+            <a href="setumei.html" class="btn-main-guide">
+                <i class="fa-solid fa-book-open"></i> まず説明を読む (setumei.html)
+            </a>
+            <a href="simulator.html" class="btn-sub-launch">
+                <i class="fa-solid fa-play"></i> 株シミュレーターを起動
+            </a>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-label">初期仮想資本</div>
+                <div class="stat-val">¥1,000,000</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">収録銘柄数</div>
+                <div class="stat-val">23 銘柄</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">1日取引セッション</div>
+                <div class="stat-val">3 セッション</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">利用料金</div>
+                <div class="stat-val" style="color: var(--accent-gold);">完全無料</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="features">
+    <div class="container">
+        <h2 class="section-title">洗練された4つのトレーディング機能</h2>
+        <p class="section-sub">実市場のボラティリティとリアルタイムな緊張感をブラウザに再現</p>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <i class="fa-solid fa-clock-rotate-left feature-icon"></i>
+                <h3>夜間PTSを含む3セッション</h3>
+                <p>前場・後場に加えて、18:00〜22:59の夜間取引セッションを搭載。仕事終わりでもリアルタイムな売買判断が可能です。</p>
+            </div>
+            <div class="feature-card">
+                <i class="fa-solid fa-chart-candlestick feature-icon"></i>
+                <h3>ハイブリッド描画エンジン</h3>
+                <p>始値・高値・安値・終値を正確に表現するローソク足とシンプルな折れ線グラフを即座に切り替え可能。3秒更新の動的レンダリング。</p>
+            </div>
+            <div class="feature-card">
+                <i class="fa-solid fa-newspaper feature-icon"></i>
+                <h3>ニュース連動アルゴリズム</h3>
+                <p>好決算や特許取得、コスト高騰などの経済イベントがランダム発生。ニュース発表に伴う株価の急騰落（±4%以上）に対応。</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="sessions" style="background: rgba(15, 23, 42, 0.4);">
+    <div class="container">
+        <h2 class="section-title">取引可能時間帯（3 セッション）</h2>
+        <p class="section-sub">平日限定。各時間帯に合わせて株価気配値がリアルタイムに動的に変動します。</p>
+
+        <div class="sessions-wrapper">
+            <div class="session-card">
+                <i class="fa-solid fa-sun"></i>
+                <div class="session-tag">前場（午前）</div>
+                <div class="session-time">09:00 - 11:30</div>
+            </div>
+            <div class="session-card">
+                <i class="fa-solid fa-cloud-sun"></i>
+                <div class="session-tag">後場（午後）</div>
+                <div class="session-time">12:30 - 15:00</div>
+            </div>
+            <div class="session-card highlight">
+                <i class="fa-solid fa-moon"></i>
+                <div class="session-tag">夜間取引（PTS）</div>
+                <div class="session-time">18:00 - 22:59</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="stocks">
+    <div class="container">
+        <h2 class="section-title">多彩な23銘柄の投資ユニバース</h2>
+        <p class="section-sub">成長株から高配当株まで、全銘柄に詳細なファンダメンタル・データを完備</p>
+
+        <div class="stock-list">
+            <div class="stock-item">
+                <div class="stock-header">
+                    <div>
+                        <div class="stock-code">3901 / テック</div>
+                        <div class="stock-name">AI未来</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="stock-price">¥4,850</div>
+                    <div class="stock-change up"><i class="fa-solid fa-caret-up"></i> +5.2%</div>
+                </div>
+            </div>
+            <div class="stock-item">
+                <div class="stock-header">
+                    <div>
+                        <div class="stock-code">4003 / 情報通信</div>
+                        <div class="stock-name">バイナリテック</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="stock-price">¥2,140</div>
+                    <div class="stock-change down"><i class="fa-solid fa-caret-down"></i> -1.8%</div>
+                </div>
+            </div>
+            <div class="stock-item">
+                <div class="stock-header">
+                    <div>
+                        <div class="stock-code">4508 / 医薬品</div>
+                        <div class="stock-name">ナノメディカル</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="stock-price">¥8,920</div>
+                    <div class="stock-change up"><i class="fa-solid fa-caret-up"></i> +3.1%</div>
+                </div>
+            </div>
+            <div class="stock-item">
+                <div class="stock-header">
+                    <div>
+                        <div class="stock-code">9504 / エネルギー</div>
+                        <div class="stock-name">未来エネ</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="stock-price">¥1,350</div>
+                    <div class="stock-change up"><i class="fa-solid fa-caret-up"></i> +0.4%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="notices">
+    <div class="container">
+        <div class="notice-section">
+            <div class="notice-head">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                Ver 26.1 ご利用上の重要なお知らせ
+            </div>
+            <div class="notice-grid">
+                <div class="notice-box">
+                    <h4>【重要】旧バージョンからのデータ引き継ぎ不可</h4>
+                    <p>基幹システムおよび価格決定エンジンの完全刷新に伴い、過去バージョンの資産・保有銘柄・取引履歴データは引き継げません。全員一律で初期資金1,000,000円からの新規スタートとなります。</p>
+                </div>
+                <div class="notice-box">
+                    <h4>データ保存（LocalStorage）の仕様</h4>
+                    <p>取引データはご利用中のブラウザ内に自動保存されます。ブラウザのキャッシュ削除やシークレットモード利用時はデータが消去・初期化されますのでご注意ください。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <div class="container footer-wrapper">
+        <div>
+            <strong>株シミュレーター Ver 26.1</strong><br>
+            <span style="font-size: 12px; color: #64748b;">高精度トレーディング・シミュレーション・プラットフォーム</span>
+        </div>
+        <div>
+            © 2026 Stock Simulator Project. All rights reserved.
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>
