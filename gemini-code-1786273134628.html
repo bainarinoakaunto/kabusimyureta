@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>株シミュレーター公開ウェブLIVE </title>
+    <title>株シミュレーター公開ウェブLIVE</title>
     <style>
         * {
             box-sizing: border-box;
@@ -11,11 +11,10 @@
             padding: 0;
         }
 
-        /* 画面共有にピッタリ収まる設定（スクロール無効化） */
+        /* 全体レイアウト */
         html, body {
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
+            width: 100%;
+            min-height: 100vh;
             font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
             background: linear-gradient(-45deg, #e0f2fe, #fbcfe8, #fef08a, #bae6fd);
             background-size: 400% 400%;
@@ -25,6 +24,7 @@
             flex-direction: column;
             justify-content: space-between;
             align-items: center;
+            overflow-x: hidden;
         }
 
         @keyframes gradientBG {
@@ -40,7 +40,7 @@
             color: #ffffff;
             padding: 12px 0;
             overflow: hidden;
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: bold;
             box-shadow: 0 4px 15px rgba(0,0,0,0.15);
             z-index: 10;
@@ -49,30 +49,30 @@
             display: inline-block;
             white-space: nowrap;
             padding-left: 100%;
-            animation: ticker 16s linear infinite;
+            animation: ticker 18s linear infinite;
         }
         @keyframes ticker {
             0% { transform: translate3d(0, 0, 0); }
             100% { transform: translate3d(-100%, 0, 0); }
         }
 
-        /* メインコンテンツエリア（横長ワイド対応） */
+        /* メインコンテンツエリア */
         .main-wrapper {
             flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
             width: 100%;
-            padding: 20px;
+            padding: 20px 12px;
         }
 
         .container {
             background: rgba(255, 255, 255, 0.94);
             backdrop-filter: blur(16px);
-            border-radius: 36px;
-            padding: 40px 60px;
-            width: 90%;
-            max-width: 960px;
+            border-radius: 32px;
+            padding: 36px 24px;
+            width: 100%;
+            max-width: 900px;
             text-align: center;
             box-shadow: 0 25px 60px rgba(14, 165, 233, 0.2);
             border: 4px solid #ffffff;
@@ -84,18 +84,18 @@
         .status-header {
             display: inline-flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             background: #f1f5f9;
-            padding: 8px 24px;
+            padding: 8px 20px;
             border-radius: 30px;
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: bold;
             color: #334155;
             margin-bottom: 16px;
         }
         .status-dot {
-            width: 14px;
-            height: 14px;
+            width: 12px;
+            height: 12px;
             background-color: #22c55e;
             border-radius: 50%;
             box-shadow: 0 0 10px #22c55e;
@@ -106,48 +106,50 @@
             50% { opacity: 0.3; }
         }
 
-        /* 超特大タイトル */
+        /* タイトル */
         h1 {
-            font-size: 3rem;
+            font-size: clamp(1.8rem, 5vw, 3rem);
             margin-bottom: 8px;
             background: linear-gradient(135deg, #0284c7, #1d4ed8);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             font-weight: 900;
-            letter-spacing: -1px;
+            line-height: 1.2;
         }
         p.subtitle {
-            font-size: 1.3rem;
+            font-size: clamp(1rem, 3vw, 1.3rem);
             color: #64748b;
-            margin-bottom: 30px;
+            margin-bottom: 24px;
             font-weight: 700;
         }
 
-        /* タイマー（巨大サイズ） */
+        /* カウントダウンタイマー */
         .timer {
             display: flex;
             justify-content: center;
-            gap: 24px;
+            gap: 12px;
             margin: 10px 0;
         }
         .time-box {
             background: linear-gradient(180deg, #ffffff, #f8fafc);
-            padding: 20px 30px;
-            border-radius: 28px;
-            min-width: 150px;
-            border: 3px solid #e2e8f0;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            padding: 16px 12px;
+            border-radius: 20px;
+            flex: 1;
+            max-width: 140px;
+            min-width: 75px;
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
         }
         .time-box .number {
-            font-size: 4.5rem;
+            font-size: clamp(2.2rem, 8vw, 4rem);
             font-weight: 900;
             color: #0284c7;
             line-height: 1;
         }
         .time-box .label {
-            font-size: 1rem;
+            font-size: clamp(0.75rem, 2vw, 0.95rem);
             color: #64748b;
-            margin-top: 10px;
+            margin-top: 8px;
             font-weight: bold;
         }
 
@@ -160,57 +162,111 @@
             display: inline-block;
             background: linear-gradient(135deg, #ff416c, #ff4b2b);
             color: white;
-            padding: 10px 36px;
+            padding: 10px 24px;
             border-radius: 40px;
             font-weight: bold;
-            font-size: 1.6rem;
+            font-size: clamp(1.2rem, 4vw, 1.6rem);
             margin-bottom: 20px;
             box-shadow: 0 8px 25px rgba(255, 75, 43, 0.4);
             animation: pulse 1.5s infinite;
         }
 
-        /* 超大型QRコード */
+        /* QRコード＆説明エリア */
         .qr-layout {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 40px;
+            gap: 28px;
             margin-top: 10px;
         }
         .qr-card {
-            padding: 16px;
+            padding: 12px;
             background: #ffffff;
-            border-radius: 24px;
+            border-radius: 20px;
             border: 3px solid #cbd5e1;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
         }
         .qr-card img {
             display: block;
-            width: 240px;
-            height: 240px;
+            width: clamp(180px, 45vw, 220px);
+            height: clamp(180px, 45vw, 220px);
         }
         .qr-instruction {
             text-align: left;
             max-width: 380px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
         }
         .qr-instruction h2 {
-            font-size: 1.8rem;
+            font-size: clamp(1.3rem, 4vw, 1.8rem);
             color: #0f172a;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         .qr-instruction p {
-            font-size: 1.1rem;
+            font-size: clamp(0.95rem, 3vw, 1.05rem);
             color: #475569;
-            line-height: 1.6;
+            line-height: 1.5;
             font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        /* URL直接アクセスボタン */
+        .btn-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 14px 24px;
+            background: linear-gradient(135deg, #0284c7, #2563eb);
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            box-shadow: 0 8px 20px rgba(2, 132, 199, 0.35);
+            transition: all 0.2s;
+        }
+        .btn-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(2, 132, 199, 0.45);
+        }
+        .btn-link:active {
+            transform: translateY(0);
         }
 
         /* 下部案内テキスト */
         .zoom-footer {
-            margin-bottom: 20px;
-            font-size: 0.95rem;
+            margin-bottom: 16px;
+            font-size: 0.85rem;
             color: #64748b;
             font-weight: bold;
+            text-align: center;
+            padding: 0 10px;
+        }
+
+        /* スマホ向けレイアウト調整 */
+        @media (max-width: 640px) {
+            .ticker-wrap {
+                font-size: 0.9rem;
+            }
+            .container {
+                padding: 28px 16px;
+                border-radius: 24px;
+            }
+            .timer {
+                gap: 8px;
+            }
+            .qr-layout {
+                flex-direction: column;
+                text-align: center;
+                gap: 20px;
+            }
+            .qr-instruction {
+                text-align: center;
+                align-items: center;
+            }
         }
 
         /* 紙吹雪用キャンバス */
@@ -250,7 +306,7 @@
         
         <div class="status-header">
             <span class="status-dot"></span>
-            <span id="status-text">公開LIVE</span>
+            <span id="status-text">公開ウェブLIVE</span>
         </div>
 
         <h1>株シミュレーター公開LIVE</h1>
@@ -280,7 +336,11 @@
                 </div>
                 <div class="qr-instruction">
                     <h2>今すぐアクセス！</h2>
-                    <p>📱 お手持ちのスマホのカメラで、画面のQRコードを直接読み取ってください！</p>
+                    <p>📱 スマホのカメラでQRコードを読み取るか、下のボタンを直接タップしてください！</p>
+                    
+                    <a href="https://bainarinoakaunto.github.io/kabusimyureta/#" class="btn-link" target="_blank" rel="noopener noreferrer">
+                        🚀 シミュレーターを開く
+                    </a>
                 </div>
             </div>
         </div>
@@ -331,16 +391,13 @@
     updateCountdown();
     const timerInterval = setInterval(updateCountdown, 1000);
 
-    // ★ BGM超強力自動再生スクリプト ★
+    // BGM自動再生
     const audio = document.getElementById('bgm');
 
     function tryPlayBGM() {
         audio.play().then(() => {
-            // 再生成功したらイベント解除
             removeAutoPlayListeners();
-        }).catch(() => {
-            // ブラウザのブロックに阻まれた場合は次の操作で即再生
-        });
+        }).catch(() => {});
     }
 
     const events = ['click', 'touchstart', 'keydown', 'mousemove', 'scroll'];
@@ -348,11 +405,8 @@
         events.forEach(event => document.removeEventListener(event, tryPlayBGM));
     }
 
-    // 画面ロード時にまず再生試行
     window.addEventListener('DOMContentLoaded', tryPlayBGM);
     window.addEventListener('load', tryPlayBGM);
-
-    // 万が一ブロックされた際、ユーザーが画面上でマウスを動かす・クリックする・キーを押すなどあらゆる動作で即再生
     events.forEach(event => document.addEventListener(event, tryPlayBGM));
 
     // 紙吹雪エフェクト
@@ -365,11 +419,11 @@
         const pieces = [];
         const colors = ['#0284c7', '#38bdf8', '#ff416c', '#fde047', '#4ade80', '#c084fc'];
 
-        for (let i = 0; i < 120; i++) {
+        for (let i = 0; i < 100; i++) {
             pieces.push({
                 x: Math.random() * canvas.width,
                 y: Math.random() * canvas.height - canvas.height,
-                size: Math.random() * 12 + 6,
+                size: Math.random() * 10 + 5,
                 color: colors[Math.floor(Math.random() * colors.length)],
                 speedY: Math.random() * 3 + 2,
                 speedX: Math.random() * 2 - 1,
