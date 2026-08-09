@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>株シミュレーター公開ウェブLIVE </title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* 画面共有にピッタリ収まる設定（スクロール無効化） */
+        html, body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            background: linear-gradient(-45deg, #e0f2fe, #fbcfe8, #fef08a, #bae6fd);
+            background-size: 400% 400%;
+            animation: gradientBG 12s ease infinite;
+            color: #1e293b;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* 上部テロップバー */
+        .ticker-wrap {
+            width: 100%;
+            background: linear-gradient(90deg, #0284c7, #2563eb);
+            color: #ffffff;
+            padding: 12px 0;
+            overflow: hidden;
+            font-size: 1.1rem;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            z-index: 10;
+        }
+        .ticker {
+            display: inline-block;
+            white-space: nowrap;
+            padding-left: 100%;
+            animation: ticker 16s linear infinite;
+        }
+        @keyframes ticker {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
+        }
+
+        /* メインコンテンツエリア（横長ワイド対応） */
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(16px);
+            border-radius: 36px;
+            padding: 40px 60px;
+            width: 90%;
+            max-width: 960px;
+            text-align: center;
+            box-shadow: 0 25px 60px rgba(14, 165, 233, 0.2);
+            border: 4px solid #ffffff;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* ステータスバッジ */
+        .status-header {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: #f1f5f9;
+            padding: 8px 24px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #334155;
+            margin-bottom: 16px;
+        }
+        .status-dot {
+            width: 14px;
+            height: 14px;
+            background-color: #22c55e;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #22c55e;
+            animation: blink 1.2s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* 超特大タイトル */
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #0284c7, #1d4ed8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 900;
+            letter-spacing: -1px;
+        }
+        p.subtitle {
+            font-size: 1.3rem;
+            color: #64748b;
+            margin-bottom: 30px;
+            font-weight: 700;
+        }
+
+        /* タイマー（巨大サイズ） */
+        .timer {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin: 10px 0;
+        }
+        .time-box {
+            background: linear-gradient(180deg, #ffffff, #f8fafc);
+            padding: 20px 30px;
+            border-radius: 28px;
+            min-width: 150px;
+            border: 3px solid #e2e8f0;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        }
+        .time-box .number {
+            font-size: 4.5rem;
+            font-weight: 900;
+            color: #0284c7;
+            line-height: 1;
+        }
+        .time-box .label {
+            font-size: 1rem;
+            color: #64748b;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        /* 13:00公開後の表示エリア */
+        #live-content {
+            display: none;
+            animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        .live-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            color: white;
+            padding: 10px 36px;
+            border-radius: 40px;
+            font-weight: bold;
+            font-size: 1.6rem;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 25px rgba(255, 75, 43, 0.4);
+            animation: pulse 1.5s infinite;
+        }
+
+        /* 超大型QRコード */
+        .qr-layout {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 10px;
+        }
+        .qr-card {
+            padding: 16px;
+            background: #ffffff;
+            border-radius: 24px;
+            border: 3px solid #cbd5e1;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+        .qr-card img {
+            display: block;
+            width: 240px;
+            height: 240px;
+        }
+        .qr-instruction {
+            text-align: left;
+            max-width: 380px;
+        }
+        .qr-instruction h2 {
+            font-size: 1.8rem;
+            color: #0f172a;
+            margin-bottom: 10px;
+        }
+        .qr-instruction p {
+            font-size: 1.1rem;
+            color: #475569;
+            line-height: 1.6;
+            font-weight: 600;
+        }
+
+        /* 下部案内テキスト */
+        .zoom-footer {
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+            color: #64748b;
+            font-weight: bold;
+        }
+
+        /* 紙吹雪用キャンバス */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 99;
+        }
+
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.85); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+
+<div class="ticker-wrap">
+    <div class="ticker">
+        📢 【公開LIVEウェブ配信中】8/10の13:00ピッタリに株シミュレーターが公開されます！ 画面にQRコードが表示されたら、スマホのカメラ又はスクリーンショットで読み込んでください🚀今回のアップデートは、機能の追加、UIの最適化、携帯でも使用できるようになりました！
+    </div>
+</div>
+
+<div class="main-wrapper">
+    <div class="container">
+        
+        <div class="status-header">
+            <span class="status-dot"></span>
+            <span id="status-text">公開LIVE</span>
+        </div>
+
+        <h1>株シミュレーター公開LIVE</h1>
+        <p class="subtitle" id="subtitle-text">⏰ 13:00 オープンまであと ⏰</p>
+
+        <div class="timer" id="timer">
+            <div class="time-box">
+                <div class="number" id="hours">00</div>
+                <div class="label">時間</div>
+            </div>
+            <div class="time-box">
+                <div class="number" id="minutes">00</div>
+                <div class="label">分</div>
+            </div>
+            <div class="time-box">
+                <div class="number" id="seconds">00</div>
+                <div class="label">秒</div>
+            </div>
+        </div>
+
+        <div id="live-content">
+            <div class="live-badge">🎉 LIVE公開スタート！ 🎉</div>
+            
+            <div class="qr-layout">
+                <div class="qr-card">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://bainarinoakaunto.github.io/kabusimyureta/#" alt="QR Code">
+                </div>
+                <div class="qr-instruction">
+                    <h2>今すぐアクセス！</h2>
+                    <p>📱 お手持ちのスマホのカメラで、画面のQRコードを直接読み取ってください！</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="zoom-footer">
+    🎵 BGM 自動再生中 (パステルハウス)
+</div>
+
+<audio id="bgm" src="パステルハウス.mp3" autoplay loop preload="auto" style="display: none;"></audio>
+
+<script>
+    // 目標時刻（明日13:00 JST）
+    const targetDate = new Date('2026-08-10T13:00:00+09:00').getTime();
+    let isLiveActive = false;
+
+    // カウントダウン処理
+    function updateCountdown() {
+        const now = new Date().getTime();
+        const distance = targetDate - now;
+
+        // 13:00到達時
+        if (distance <= 0 && !isLiveActive) {
+            isLiveActive = true;
+            document.getElementById('timer').style.display = 'none';
+            document.getElementById('subtitle-text').style.display = 'none';
+            document.getElementById('live-content').style.display = 'block';
+            document.getElementById('status-text').innerText = 'LIVE配信公開中！';
+            
+            startConfetti();
+            clearInterval(timerInterval);
+            return;
+        }
+
+        if (!isLiveActive) {
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            document.getElementById('hours').innerText = String(hours).padStart(2, '0');
+            document.getElementById('minutes').innerText = String(minutes).padStart(2, '0');
+            document.getElementById('seconds').innerText = String(seconds).padStart(2, '0');
+        }
+    }
+
+    updateCountdown();
+    const timerInterval = setInterval(updateCountdown, 1000);
+
+    // ★ BGM超強力自動再生スクリプト ★
+    const audio = document.getElementById('bgm');
+
+    function tryPlayBGM() {
+        audio.play().then(() => {
+            // 再生成功したらイベント解除
+            removeAutoPlayListeners();
+        }).catch(() => {
+            // ブラウザのブロックに阻まれた場合は次の操作で即再生
+        });
+    }
+
+    const events = ['click', 'touchstart', 'keydown', 'mousemove', 'scroll'];
+    function removeAutoPlayListeners() {
+        events.forEach(event => document.removeEventListener(event, tryPlayBGM));
+    }
+
+    // 画面ロード時にまず再生試行
+    window.addEventListener('DOMContentLoaded', tryPlayBGM);
+    window.addEventListener('load', tryPlayBGM);
+
+    // 万が一ブロックされた際、ユーザーが画面上でマウスを動かす・クリックする・キーを押すなどあらゆる動作で即再生
+    events.forEach(event => document.addEventListener(event, tryPlayBGM));
+
+    // 紙吹雪エフェクト
+    function startConfetti() {
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const pieces = [];
+        const colors = ['#0284c7', '#38bdf8', '#ff416c', '#fde047', '#4ade80', '#c084fc'];
+
+        for (let i = 0; i < 120; i++) {
+            pieces.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height - canvas.height,
+                size: Math.random() * 12 + 6,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                speedY: Math.random() * 3 + 2,
+                speedX: Math.random() * 2 - 1,
+                rotation: Math.random() * 360
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            pieces.forEach(p => {
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate((p.rotation * Math.PI) / 180);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                ctx.restore();
+
+                p.y += p.speedY;
+                p.x += p.speedX;
+                p.rotation += 2;
+
+                if (p.y > canvas.height) p.y = -10;
+            });
+            requestAnimationFrame(draw);
+        }
+        draw();
+    }
+</script>
+
+</body>
+</html>
