@@ -248,13 +248,19 @@
                 <div class="card-title">取引履歴</div>
                 <div class="trade-backup-panel">
                     <div style="font-weight:800;font-size:1.05rem;">☁️ 取引履歴バックアップ</div>
-                    <div style="color:var(--text-sub);font-size:.85rem;margin-top:5px;">事前に発行した識別子を使って、このブラウザの取引履歴をGoogleフォームへ保存できます。</div>
+                    <div style="color:var(--text-sub);font-size:.85rem;margin-top:5px;">取引を行うと、その取引1件だけが自動でGoogleフォームへ保存されます。</div>
                     <div class="trade-backup-id"><span>あなたの識別子</span><code id="tradeIdentifier">発行中...</code></div>
                     <div class="trade-backup-actions">
-                        <button type="button" class="trade-backup-btn" onclick="backupTradeHistory()">☁️ 取引履歴を保存</button>
+                        <button type="button" class="trade-backup-btn" onclick="copyTradeIdentifier()">📋 識別子をコピー</button>
                         <button type="button" class="trade-backup-btn secondary" onclick="openRecoveryRequest()">🛠️ 取引履歴復旧を依頼</button>
                     </div>
-                    <div class="trade-backup-note">識別子はブラウザ内に保存されます。ブラウザを変更した場合などは同じ識別子を引き継げない場合があります。</div>
+                    <div class="trade-backup-actions" style="margin-top:8px;">
+                        <button type="button" class="trade-backup-btn" onclick="exportRecoveryFile()">💾 復旧ファイルを保存</button>
+                        <button type="button" class="trade-backup-btn secondary" onclick="document.getElementById('recoveryFileInput').click()">📂 復旧ファイルを読み込む</button>
+                    </div>
+                    <input type="file" id="recoveryFileInput" accept=".json,application/json" style="display:none;" onchange="importRecoveryFile(event)">
+                    <div id="recoveryFileStatus" style="margin-top:8px;font-size:.82rem;color:var(--text-sub);"></div>
+                    <div class="trade-backup-note">復旧ファイルには、このブラウザのシミュレーター状態（残高・保有株・取引履歴・株価データ等）を保存します。復旧時は現在の状態を上書きします。</div>
                 </div>
                 <div style="overflow-x: auto;margin-top:18px;">
                     <table>
@@ -307,17 +313,12 @@
         <input type="hidden" name="entry.777710718" id="accessRecordBrowser">
     </form>
 
-    <!-- 取引履歴バックアップ用Googleフォーム -->
-    <!-- 1838070749=識別子 / 1518187345=取引履歴 / 639139458=総資産 / 1916667741=現金 / 907905811=保有銘柄 / 108686351=保存日時 / 1196773287=バージョン -->
-    <iframe name="tradeBackupFrame" id="tradeBackupFrame" style="display:none;" title="trade backup"></iframe>
-    <form id="tradeBackupForm" action="https://docs.google.com/forms/d/e/1FAIpQLSc2Sc68YOMZoJd5DmX6DzCGe4-EJ0wuEJrqLpfu5h7IYUn1iw/formResponse" method="POST" target="tradeBackupFrame" style="display:none;" aria-hidden="true">
-        <input type="hidden" name="entry.1838070749" id="backupIdentifier">
-        <input type="hidden" name="entry.1518187345" id="backupHistory">
-        <input type="hidden" name="entry.639139458" id="backupAssets">
-        <input type="hidden" name="entry.1916667741" id="backupCash">
-        <input type="hidden" name="entry.907905811" id="backupPortfolio">
-        <input type="hidden" name="entry.108686351" id="backupSavedAt">
-        <input type="hidden" name="entry.1196773287" id="backupVersion">
+    <!-- 取引履歴記録用Googleフォーム：識別子＋データ -->
+    <!-- Googleフォームは「識別子」「データ」の2項目だけ使用します。 -->
+    <iframe name="tradeRecordFrame" id="tradeRecordFrame" style="display:none;" title="trade record"></iframe>
+    <form id="tradeRecordForm" action="https://docs.google.com/forms/d/e/1FAIpQLSc2Sc68YOMZoJd5DmX6DzCGe4-EJ0wuEJrqLpfu5h7IYUn1iw/formResponse" method="POST" target="tradeRecordFrame" style="display:none;" aria-hidden="true">
+        <input type="hidden" name="entry.1838070749" id="tradeRecordIdentifier">
+        <input type="hidden" name="entry.1518187345" id="tradeRecordData">
     </form>
 
     <div id="accessRecordNotice" role="dialog" aria-label="アクセス情報の記録について">
@@ -452,6 +453,111 @@
         }
 
         function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+        // ===== 復旧ファイル =====
+        const RECOVERY_FILE_VERSION = '1.0';
+
+        function buildRecoveryData() {
+            return {
+                fileType: 'stock-simulator-recovery',
+                fileVersion: RECOVERY_FILE_VERSION,
+                simulatorVersion: '26.1',
+                identifier: getTradeIdentifier(),
+                exportedAt: new Date().toISOString(),
+                state: JSON.parse(JSON.stringify(state))
+            };
+        }
+
+        function exportRecoveryFile() {
+            try {
+                const data = buildRecoveryData();
+                const json = JSON.stringify(data, null, 2);
+                const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const id = getTradeIdentifier().replace(/[^A-Za-z0-9_-]/g, '_');
+                const date = new Date().toISOString().slice(0,10).replace(/-/g,'');
+                a.href = url;
+                a.download = `株シミュレーター_復旧_${id}_${date}.json`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                const status = document.getElementById('recoveryFileStatus');
+                if (status) status.textContent = '✅ 復旧ファイルを保存しました。';
+            } catch (e) {
+                console.error(e);
+                alert('復旧ファイルの保存に失敗しました。');
+            }
+        }
+
+        function importRecoveryFile(event) {
+            const input = event.target;
+            const file = input.files && input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function() {
+                try {
+                    const data = JSON.parse(String(reader.result || ''));
+
+                    if (!data || data.fileType !== 'stock-simulator-recovery') {
+                        throw new Error('復旧ファイルではありません。');
+                    }
+                    if (!data.state || typeof data.state !== 'object') {
+                        throw new Error('シミュレーターのデータが見つかりません。');
+                    }
+                    if (!Array.isArray(data.state.history) || !data.state.portfolio || !Array.isArray(data.state.stocks)) {
+                        throw new Error('復旧データの形式が正しくありません。');
+                    }
+
+                    const currentId = getTradeIdentifier();
+                    const fileId = String(data.identifier || '');
+                    if (fileId && fileId !== currentId) {
+                        const ok = confirm(
+                            'この復旧ファイルの識別子は現在の識別子と異なります。\n\n' +
+                            '現在: ' + currentId + '\n' +
+                            'ファイル: ' + fileId + '\n\n' +
+                            'ファイル側の識別子に切り替えて復旧しますか？'
+                        );
+                        if (!ok) return;
+                        localStorage.setItem(TRADE_IDENTIFIER_KEY, fileId);
+                    }
+
+                    if (!confirm('現在のシミュレーターのデータを、この復旧ファイルの内容で上書きします。\n\n続行しますか？')) {
+                        return;
+                    }
+
+                    state = JSON.parse(JSON.stringify(data.state));
+                    if (!state.usedCoupons) state.usedCoupons = [];
+                    if (!Array.isArray(state.history)) state.history = [];
+                    if (!state.portfolio || typeof state.portfolio !== 'object') state.portfolio = {};
+                    if (!Array.isArray(state.stocks) || state.stocks.length === 0) setupInitialStocks();
+                    saveState();
+
+                    // 画面を復旧後の状態に更新
+                    if (typeof renderDashboard === 'function') renderDashboard();
+                    if (typeof renderMarketGrid === 'function') renderMarketGrid();
+                    if (typeof updateMarketTimeAndStatus === 'function') updateMarketTimeAndStatus();
+                    if (typeof renderHistory === 'function') renderHistory();
+                    initTradeIdentifier();
+
+                    const status = document.getElementById('recoveryFileStatus');
+                    if (status) status.textContent = '✅ 復旧しました。識別子: ' + getTradeIdentifier();
+                    alert('復旧が完了しました。');
+                } catch (e) {
+                    console.error(e);
+                    alert('復旧ファイルを読み込めませんでした。\n\n' + e.message);
+                } finally {
+                    input.value = '';
+                }
+            };
+            reader.onerror = function() {
+                alert('復旧ファイルの読み込みに失敗しました。');
+                input.value = '';
+            };
+            reader.readAsText(file, 'utf-8');
+        }
 
         function resetAllData() {
             if(confirm("全取引データと資産状態をリセットして初期状態に戻しますか？")) {
@@ -763,6 +869,7 @@
                 alert("現在取引時間外です。");
                 return;
             }
+
             const stock = state.stocks.find(s => s.code === selectedStockCode);
             if (!stock) return;
 
@@ -774,40 +881,119 @@
 
             const totalCost = stock.price * qty;
             const now = new Date();
-            const timeStr = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${now.getMinutes()}`;
+            const timeStr = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+            let action = '';
 
             if (type === 'buy') {
                 if (state.cash < totalCost) {
                     alert("現金残高が不足しています。");
                     return;
                 }
+
                 state.cash -= totalCost;
+
                 if (!state.portfolio[stock.code]) {
                     state.portfolio[stock.code] = { shares: 0, avgPrice: 0 };
                 }
+
                 const current = state.portfolio[stock.code];
                 const totalShares = current.shares + qty;
                 current.avgPrice = ((current.shares * current.avgPrice) + totalCost) / totalShares;
                 current.shares = totalShares;
 
-                state.history.unshift({ time: timeStr, type: '買付', name: stock.name, shares: qty, price: stock.price, total: totalCost });
+                action = '買う';
+                state.history.unshift({
+                    time: timeStr,
+                    type: '買付',
+                    name: stock.name,
+                    shares: qty,
+                    price: stock.price,
+                    total: totalCost
+                });
+
                 alert(`${stock.name} を ${qty} 株買付しました。`);
+
             } else if (type === 'sell') {
                 const current = state.portfolio[stock.code];
+
                 if (!current || current.shares < qty) {
                     alert("保有株数が不足しています。");
                     return;
                 }
+
                 state.cash += totalCost;
                 current.shares -= qty;
                 if (current.shares === 0) delete state.portfolio[stock.code];
 
-                state.history.unshift({ time: timeStr, type: '売却', name: stock.name, shares: qty, price: stock.price, total: totalCost });
+                action = '売る';
+                state.history.unshift({
+                    time: timeStr,
+                    type: '売却',
+                    name: stock.name,
+                    shares: qty,
+                    price: stock.price,
+                    total: totalCost
+                });
+
                 alert(`${stock.name} を ${qty} 株売却しました。`);
             }
 
             saveState();
             renderDetailView(stock.code);
+
+            // Googleフォームへ「今回の取引1件だけ」を送信。
+            // A列のタイムスタンプはフォーム側で自動生成される。
+            sendTradeRecord({
+                identifier: getTradeIdentifier(),
+                action: action,
+                shares: qty,
+                stock: stock.name,
+                stockCode: stock.code,
+                balance: state.cash,
+                price: stock.price,
+                total: totalCost
+            });
+        }
+
+        function sendTradeRecord(record) {
+            try {
+                const form = document.getElementById('tradeRecordForm');
+                const identifierInput = document.getElementById('tradeRecordIdentifier');
+                const dataInput = document.getElementById('tradeRecordData');
+                if (!form || !identifierInput || !dataInput) return;
+
+                const identifier = String(record.identifier || getTradeIdentifier());
+
+                // 1回の取引につき「今回の取引」と「その直後の完全なstate」を保存。
+                // これにより、GAS側は最新行だけからも復旧ファイルを生成できます。
+                const data = {
+                    version: '26.1',
+                    identifier: identifier,
+                    savedAt: new Date().toISOString(),
+                    transaction: {
+                        action: String(record.action || ''),
+                        stock: String(record.stock || ''),
+                        stockCode: String(record.stockCode || ''),
+                        shares: Number(record.shares || 0),
+                        price: Number(record.price || 0),
+                        total: Number(record.total || 0),
+                        balance: Number(record.balance || state.cash || 0),
+                        time: String(record.time || new Date().toISOString())
+                    },
+                    state: JSON.parse(JSON.stringify(state))
+                };
+
+                identifierInput.value = identifier;
+                dataInput.value = JSON.stringify(data);
+
+                // Googleフォーム側のA列タイムスタンプは自動記録。
+                form.submit();
+
+                console.log('完全復旧用の取引データをGoogleフォームへ保存しました。');
+            } catch (error) {
+                console.warn('取引履歴のGoogleフォーム送信に失敗しました:', error);
+            }
         }
 
         function renderHistory() {
@@ -976,36 +1162,9 @@
         }
         function safeBackupJson(value){try{return JSON.stringify(value);}catch(e){return '[]';}}
         function backupTradeHistory(){
-            try{
-                const form=document.getElementById('tradeBackupForm');if(!form)return;
-                const id=getTradeIdentifier();
-                const now=new Date().toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
-                document.getElementById('backupIdentifier').value=id;
-                document.getElementById('backupHistory').value=safeBackupJson(Array.isArray(state.history)?state.history:[]);
-                document.getElementById('backupAssets').value=String(calculateTotalAssetsForBackup());
-                document.getElementById('backupCash').value=String(state.cash||0);
-                document.getElementById('backupPortfolio').value=safeBackupJson(state.portfolio||{});
-                document.getElementById('backupSavedAt').value=now;
-                document.getElementById('backupVersion').value=TRADE_BACKUP_VERSION;
-                form.submit();
-                // Googleフォームの自動POSTが環境によって受信されない場合に備え、
-                // 同じ内容を入力済みにしたフォームも開けるようにする。
-                setTimeout(()=>{
-                    const url=new URL('https://docs.google.com/forms/d/e/1FAIpQLSc2Sc68YOMZoJd5DmX6DzCGe4-EJ0wuEJrqLpfu5h7IYUn1iw/viewform');
-                    url.searchParams.set('usp','pp_url');
-                    url.searchParams.set('entry.1838070749',id);
-                    url.searchParams.set('entry.1518187345',safeBackupJson(Array.isArray(state.history)?state.history:[]));
-                    url.searchParams.set('entry.639139458',String(calculateTotalAssetsForBackup()));
-                    url.searchParams.set('entry.1916667741',String(state.cash||0));
-                    url.searchParams.set('entry.907905811',safeBackupJson(state.portfolio||{}));
-                    url.searchParams.set('entry.108686351',now);
-                    url.searchParams.set('entry.1196773287',TRADE_BACKUP_VERSION);
-                    const w=window.open(url.toString(),'_blank','noopener,noreferrer');
-                    if(!w) alert('自動保存を実行しました。\n\nブラウザのポップアップがブロックされた場合は、取引履歴画面の保存ボタンをもう一度押してください。\n\n識別子：'+id);
-                },700);
-                alert('取引履歴の保存処理を開始しました。\n\n識別子：'+id+'\n\n確認用のGoogleフォームも開きます。');
-            }catch(e){console.error(e);alert('取引履歴の保存に失敗しました。');}
+            alert('取引履歴は、買う・売る操作を行った時点で1件ずつ自動保存されます。\n\n過去の履歴を再送信する機能は、重複登録を防ぐため無効にしています。');
         }
+
         function openRecoveryRequest(){
             const id=getTradeIdentifier();
             if(!RECOVERY_FORM_URL){alert('復旧依頼フォームのURLがまだ設定されていません。\n\n現在の識別子：'+id);return;}
