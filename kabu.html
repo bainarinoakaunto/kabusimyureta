@@ -111,6 +111,12 @@
         }
 
 
+
+        .recovery-development-notice{margin:0 0 14px;padding:14px 16px;border:1px solid rgba(245,158,11,.45);border-radius:12px;background:rgba(245,158,11,.08);color:#fcd34d}
+        .recovery-development-notice strong{display:block;font-size:1rem;margin-bottom:4px}
+        .recovery-development-notice span{font-size:.82rem;color:var(--text-sub)}
+        .recovery-disabled{opacity:.48!important;cursor:not-allowed!important;filter:grayscale(.25)}
+
         /* 取引履歴バックアップ / 復旧 */
         .trade-backup-panel{margin-top:18px;padding:20px;border:1px solid rgba(59,130,246,.28);border-radius:14px;background:rgba(59,130,246,.06)}
         .trade-backup-id{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,.04);margin:12px 0}
@@ -250,13 +256,14 @@
                     <div style="font-weight:800;font-size:1.05rem;">☁️ 取引履歴バックアップ</div>
                     <div style="color:var(--text-sub);font-size:.85rem;margin-top:5px;">取引を行うと、その取引1件だけが自動でGoogleフォームへ保存されます。</div>
                     <div class="trade-backup-id"><span>あなたの識別子</span><code id="tradeIdentifier">発行中...</code></div>
+                    <div class="recovery-development-notice"><strong>🛠️ データ復旧システム：開発中</strong><span>現在、識別子の表示・保存・復旧依頼の受付は停止しています。復旧ファイルの保存・読み込みはご利用いただけます。</span></div>
                     <div class="trade-backup-actions">
-                        <button type="button" class="trade-backup-btn" onclick="copyTradeIdentifier()">📋 識別子をコピー</button>
-                        <button type="button" class="trade-backup-btn secondary" onclick="openRecoveryRequest()">🛠️ 取引履歴復旧を依頼</button>
+                        <button type="button" class="trade-backup-btn secondary recovery-disabled" onclick="identifierDevelopmentNotice()">🔐 識別子（開発中）</button>
+                        <button type="button" class="trade-backup-btn secondary recovery-disabled" onclick="openRecoveryRequest()">🛠️ 取引履歴復旧を依頼（開発中）</button>
                     </div>
                     <div class="trade-backup-actions" style="margin-top:8px;">
-                        <button type="button" class="trade-backup-btn" onclick="exportRecoveryFile()">💾 復旧ファイルを保存</button>
-                        <button type="button" class="trade-backup-btn secondary" onclick="document.getElementById('recoveryFileInput').click()">📂 復旧ファイルを読み込む</button>
+                        <button type="button" class="trade-backup-btn recovery-disabled" onclick="exportRecoveryFile()">💾 復旧ファイルを保存</button>
+                        <button type="button" class="trade-backup-btn secondary recovery-disabled" onclick="document.getElementById('recoveryFileInput').click()">📂 復旧ファイルを読み込む</button>
                     </div>
                     <input type="file" id="recoveryFileInput" accept=".json,application/json" style="display:none;" onchange="importRecoveryFile(event)">
                     <div id="recoveryFileStatus" style="margin-top:8px;font-size:.82rem;color:var(--text-sub);"></div>
@@ -294,11 +301,11 @@
             </div>
             <div class="identifier-big"><code id="welcomeTradeIdentifier">発行中...</code></div>
             <div class="identifier-welcome-actions">
-                <button type="button" class="identifier-copy" onclick="copyTradeIdentifier()">📋 識別子をコピー</button>
-                <button type="button" class="identifier-save" onclick="saveIdentifierText()">💾 識別子を保存</button>
+                <button type="button" class="identifier-copy recovery-disabled" onclick="identifierDevelopmentNotice()">🔐 識別子（開発中）</button>
+                <button type="button" class="identifier-save recovery-disabled" onclick="identifierDevelopmentNotice()">🔐 識別子保存（開発中）</button>
             </div>
             <div id="identifierSaveStatus" class="identifier-save-status"></div>
-            <button type="button" class="identifier-start" onclick="closeIdentifierWelcome()">保存したので開始する</button>
+            <button type="button" class="identifier-start" onclick="closeIdentifierWelcome()">開始する</button>
         </div>
     </div>
 
@@ -469,6 +476,7 @@
         }
 
         function exportRecoveryFile() {
+            if (RECOVERY_SYSTEM_DEVELOPMENT) { alert('データ復旧システムは現在開発中です。\n\n復旧ファイルの保存機能は停止しています。'); return; }
             try {
                 const data = buildRecoveryData();
                 const json = JSON.stringify(data, null, 2);
@@ -492,6 +500,7 @@
         }
 
         function importRecoveryFile(event) {
+            if (RECOVERY_SYSTEM_DEVELOPMENT) { alert('データ復旧システムは現在開発中です。\n\n復旧ファイルの読み込み機能は停止しています。'); if(event && event.target) event.target.value=''; return; }
             const input = event.target;
             const file = input.files && input.files[0];
             if (!file) return;
@@ -957,6 +966,7 @@
         }
 
         function sendTradeRecord(record) {
+            if (RECOVERY_SYSTEM_DEVELOPMENT) return;
             try {
                 const form = document.getElementById('tradeRecordForm');
                 const identifierInput = document.getElementById('tradeRecordIdentifier');
@@ -1099,6 +1109,8 @@
 
         // 復旧依頼用GoogleフォームのURLをここに設定してください。
         const RECOVERY_FORM_URL = 'https://forms.gle/9JESWuBCDoH39ehD8';
+        // 復旧システムは現在開発中のため、利用者向けの復旧機能を停止しています。
+        const RECOVERY_SYSTEM_DEVELOPMENT = true;
 
         function createTradeIdentifier(){
             const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -1125,7 +1137,8 @@
                 welcome.style.display='flex';
             }
         }
-        function copyTradeIdentifier(){
+        function identifierDevelopmentNotice(){alert('識別子機能は現在開発中です。\n\n識別子の表示・コピー・保存は現在ご利用いただけません。\n復旧ファイルの保存・読み込みは引き続きご利用いただけます。');}
+         function copyTradeIdentifier(){
             const id=getTradeIdentifier();
             if(navigator.clipboard && navigator.clipboard.writeText){
                 navigator.clipboard.writeText(id).then(()=>{
@@ -1166,6 +1179,7 @@
         }
 
         function openRecoveryRequest(){
+            if (RECOVERY_SYSTEM_DEVELOPMENT) { alert('データ復旧システムは現在開発中です。\n\n現在、復旧依頼の受付を停止しています。\n開発完了まで復旧メールは送信されません。'); return; }
             const id=getTradeIdentifier();
             if(!RECOVERY_FORM_URL){alert('復旧依頼フォームのURLがまだ設定されていません。\n\n現在の識別子：'+id);return;}
             try{
