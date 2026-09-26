@@ -1,1203 +1,730 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>株シミュレーターversion26.1</title>
-    <script src="https://cdn.jsdelivr.net/npm/luxon@3.3.0/build/global/luxon.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1/dist/chartjs-adapter-luxon.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial@0.2.0/dist/chartjs-chart-financial.min.js"></script>
-    <style>
-        :root { --bg-dark:#0b0e14; --bg-card:#151922; --bg-hover:#1e2330; --text-main:#f0f4f8; --text-sub:#8a99ad; --accent-green:#00c853; --accent-red:#ff3d00; --accent-gold:#ffd700; --primary-blue:#2962ff; --border-color:#232a3b; }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background-color: var(--bg-dark); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; padding-bottom: 70px; }
-        header { background-color: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
-        .logo { font-size: 1.2rem; font-weight: bold; color: var(--primary-blue); display: flex; align-items: center; gap: 8px; }
-        .market-status-bar { display: flex; align-items: center; gap: 12px; font-size: 0.85rem; color: var(--text-sub); }
-        .status-badge { padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; }
-        .status-open { background-color: rgba(0, 200, 83, 0.2); color: var(--accent-green); }
-        .status-night { background-color: rgba(41, 98, 255, 0.2); color: #64b5f6; }
-        .status-closed { background-color: rgba(255, 61, 0, 0.2); color: var(--accent-red); }
-        nav { position: fixed; bottom: 0; left: 0; width: 100%; background-color: var(--bg-card); border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000; }
-        .nav-btn { background: none; border: none; color: var(--text-sub); display: flex; flex-direction: column; align-items: center; font-size: 0.75rem; cursor: pointer; width: 25%; transition: color 0.2s; }
-        .nav-btn.active { color: var(--primary-blue); font-weight: bold; }
-        .nav-btn span { font-size: 1.2rem; margin-bottom: 2px; }
-        .container { max-width: 1200px; width: 100%; margin: 0 auto; padding: 20px 15px; flex: 1; }
-        .page { display: none; }
-        .page.active { display: block; animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        .card { background-color: var(--bg-card); border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid var(--border-color); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .card-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
-        .stock-card { background-color: var(--bg-card); border-radius: 10px; padding: 15px; border: 1px solid var(--border-color); cursor: pointer; transition: transform 0.2s, background-color 0.2s; }
-        .stock-card:hover { transform: translateY(-3px); background-color: var(--bg-hover); }
-        .stock-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-        .stock-name { font-weight: bold; font-size: 1rem; }
-        .stock-code { font-size: 0.8rem; color: var(--text-sub); }
-        .stock-price-box { text-align: right; }
-        .stock-price { font-size: 1.2rem; font-weight: bold; }
-        .stock-change { font-size: 0.85rem; font-weight: bold; }
-        .up { color: var(--accent-green); }
-        .down { color: var(--accent-red); }
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 2000; }
-        .modal-content { background: var(--bg-card); padding: 25px; border-radius: 12px; max-width: 500px; width: 90%; border: 1px solid var(--border-color); }
-        .btn { background-color: var(--primary-blue); color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; transition: opacity 0.2s; }
-        .btn:hover { opacity: 0.9; }
-        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .btn-sell { background-color: var(--accent-red); }
-        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
-        th { color: var(--text-sub); font-weight: normal; }
-        input[type="number"], input[type="text"] { width: 100%; padding: 10px; background: var(--bg-dark); border: 1px solid var(--border-color); color: white; border-radius: 6px; margin-top: 5px; margin-bottom: 15px; }
-        .tab-group { display: flex; gap: 10px; margin-bottom: 15px; }
-        .tab-btn { background: var(--bg-hover); border: none; color: var(--text-sub); padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 0.85rem; }
-        .tab-btn.active { background: var(--primary-blue); color: white; }
-        .portfolio-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .asset-card { background-color: var(--bg-card); border: 1px solid var(--border-color); padding: 15px; border-radius: 10px; }
-        .asset-title { font-size: 0.8rem; color: var(--text-sub); margin-bottom: 5px; }
-        .asset-val { font-size: 1.4rem; font-weight: bold; }
-        .news-item { padding: 12px 0; border-bottom: 1px solid var(--border-color); }
-        .news-item:last-child { border-bottom: none; }
-        .news-date { font-size: 0.75rem; color: var(--text-sub); }
-        .news-title { font-size: 0.95rem; margin-top: 4px; font-weight: bold; }
-        .notice-box { background-color: rgba(255, 215, 0, 0.1); border: 1px solid var(--accent-gold); border-radius: 8px; padding: 12px 15px; font-size: 0.85rem; color: #ffe066; margin-bottom: 20px; line-height: 1.5; }
-        @media (max-width: 768px) { .market-status-bar { font-size: 0.75rem; } .grid { grid-template-columns: 1fr; } .portfolio-summary { grid-template-columns: 1fr 1fr; } }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        /* ===== アクセス情報記録通知 ===== */
-        #accessRecordNotice {
-            position: fixed;
-            left: 16px;
-            right: 16px;
-            bottom: 78px;
-            z-index: 3000;
-            display: none;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-            padding: 14px 16px;
-            background: rgba(21, 25, 34, 0.97);
-            color: var(--text-main);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            box-shadow: 0 8px 30px rgba(0,0,0,.35);
-            backdrop-filter: blur(8px);
-        }
-        .access-record-text {
-            font-size: .82rem;
-            line-height: 1.55;
-        }
-        .access-record-ok {
-            flex: 0 0 auto;
-            border: 0;
-            border-radius: 7px;
-            padding: 9px 18px;
-            background: var(--primary-blue);
-            color: #fff;
-            font-weight: 700;
-            cursor: pointer;
-        }
-        .access-record-ok:hover { opacity: .9; }
-        @media (max-width: 768px) {
-            #accessRecordNotice {
-                left: 10px;
-                right: 10px;
-                bottom: 76px;
-                padding: 12px;
-                align-items: flex-end;
-            }
-            .access-record-text { font-size: .75rem; }
-            .access-record-ok { padding: 8px 14px; }
-        }
+<title>システムメンテナンス中｜株シミュレーター</title>
 
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
 
+:root{
+    --bg:#05070c;
+    --panel:#0c111b;
+    --panel2:#101722;
+    --line:rgba(255,255,255,.09);
+    --text:#f5f7fb;
+    --muted:#8d98aa;
+    --accent:#65a9ff;
+    --warning:#ffc857;
+}
 
-        .recovery-development-notice{margin:0 0 14px;padding:14px 16px;border:1px solid rgba(245,158,11,.45);border-radius:12px;background:rgba(245,158,11,.08);color:#fcd34d}
-        .recovery-development-notice strong{display:block;font-size:1rem;margin-bottom:4px}
-        .recovery-development-notice span{font-size:.82rem;color:var(--text-sub)}
-        .recovery-disabled{opacity:.48!important;cursor:not-allowed!important;filter:grayscale(.25)}
+html{
+    scroll-behavior:smooth;
+}
 
-        /* 取引履歴バックアップ / 復旧 */
-        .trade-backup-panel{margin-top:18px;padding:20px;border:1px solid rgba(59,130,246,.28);border-radius:14px;background:rgba(59,130,246,.06)}
-        .trade-backup-id{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,.04);margin:12px 0}
-        .trade-backup-id code{font-family:monospace;font-size:15px;font-weight:700;color:#93c5fd;word-break:break-all}
-        .trade-backup-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
-        .trade-backup-btn{border:0;border-radius:10px;padding:12px 14px;font-weight:700;cursor:pointer;color:#fff;background:#2563eb}
-        .trade-backup-btn.secondary{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12)}
-        .trade-backup-btn:hover{transform:translateY(-1px);opacity:.92}
-        .trade-backup-note{margin-top:10px;color:var(--text-sub);font-size:.78rem;line-height:1.6}
-        @media(max-width:600px){.trade-backup-actions{grid-template-columns:1fr}.trade-backup-id{align-items:flex-start;flex-direction:column}}
+body{
+    min-height:100vh;
+    background:
+        radial-gradient(
+            circle at 50% -10%,
+            rgba(71,128,220,.18),
+            transparent 38%
+        ),
+        radial-gradient(
+            circle at 10% 90%,
+            rgba(80,110,180,.08),
+            transparent 30%
+        ),
+        var(--bg);
+    color:var(--text);
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "Noto Sans JP",
+        sans-serif;
+    overflow-x:hidden;
+}
 
-        /* 初回 識別子案内 */
-        #identifierWelcome{position:fixed;inset:0;z-index:5000;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.88);padding:18px;}
-        .identifier-welcome-card{width:min(520px,100%);background:var(--bg-card);border:1px solid var(--border-color);border-radius:18px;padding:28px;box-shadow:0 18px 60px rgba(0,0,0,.5);}
-        .identifier-welcome-title{font-size:1.35rem;font-weight:800;margin-bottom:8px;}
-        .identifier-welcome-sub{color:var(--text-sub);font-size:.9rem;line-height:1.7;}
-        .identifier-big{margin:18px 0;padding:18px;border-radius:12px;background:var(--bg-dark);border:1px solid rgba(59,130,246,.45);text-align:center;}
-        .identifier-big code{font-family:monospace;font-size:1.35rem;font-weight:800;letter-spacing:1px;color:#93c5fd;word-break:break-all;}
-        .identifier-welcome-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-        .identifier-welcome-actions button{border:0;border-radius:10px;padding:12px;font-weight:800;cursor:pointer;}
-        .identifier-copy{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.12)!important;}
-        .identifier-save{background:#2563eb;color:#fff;}
-        .identifier-start{width:100%;margin-top:12px;background:#00a86b;color:#fff;}
-        .identifier-save-status{font-size:.8rem;color:var(--text-sub);text-align:center;margin-top:10px;min-height:20px;}
-        @media(max-width:600px){.identifier-welcome-card{padding:22px}.identifier-big code{font-size:1.05rem}.identifier-welcome-actions{grid-template-columns:1fr}}
-    </style>
+/* =========================
+   背景
+========================= */
+
+.background-grid{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    opacity:.18;
+    background-image:
+        linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
+    background-size:42px 42px;
+    mask-image:linear-gradient(
+        to bottom,
+        black,
+        transparent 90%
+    );
+}
+
+.glow{
+    position:fixed;
+    width:500px;
+    height:500px;
+    border-radius:50%;
+    background:rgba(80,140,255,.07);
+    filter:blur(100px);
+    top:-300px;
+    left:50%;
+    transform:translateX(-50%);
+    pointer-events:none;
+}
+
+/* =========================
+   ヘッダー
+========================= */
+
+header{
+    width:100%;
+    height:72px;
+    border-bottom:1px solid var(--line);
+    background:rgba(5,7,12,.72);
+    backdrop-filter:blur(18px);
+    display:flex;
+    align-items:center;
+    position:relative;
+    z-index:5;
+}
+
+.header-inner{
+    width:min(1180px,92%);
+    margin:auto;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+}
+
+.logo{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    font-weight:800;
+    letter-spacing:.04em;
+}
+
+.logo-mark{
+    width:36px;
+    height:36px;
+    border-radius:10px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:
+        linear-gradient(
+            135deg,
+            #1d2738,
+            #111827
+        );
+    border:1px solid rgba(255,255,255,.12);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.08);
+    font-size:18px;
+}
+
+.logo small{
+    display:block;
+    color:var(--muted);
+    font-size:9px;
+    font-weight:600;
+    letter-spacing:.16em;
+    margin-top:2px;
+}
+
+.header-status{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:#aeb8c9;
+    font-size:11px;
+    letter-spacing:.08em;
+}
+
+.header-dot{
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    background:var(--warning);
+    box-shadow:0 0 12px rgba(255,200,87,.5);
+}
+
+/* =========================
+   メイン
+========================= */
+
+main{
+    width:min(1000px,92%);
+    margin:auto;
+    padding:75px 0 80px;
+    position:relative;
+    z-index:2;
+}
+
+/* =========================
+   ヒーロー
+========================= */
+
+.hero{
+    text-align:center;
+    margin-bottom:48px;
+}
+
+.maintenance-icon{
+    width:94px;
+    height:94px;
+    margin:0 auto 27px;
+    border-radius:26px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.08),
+            rgba(255,255,255,.025)
+        );
+    border:1px solid rgba(255,255,255,.12);
+    box-shadow:
+        0 20px 60px rgba(0,0,0,.35),
+        inset 0 1px 0 rgba(255,255,255,.08);
+    animation:float 4s ease-in-out infinite;
+}
+
+.maintenance-icon::before{
+    content:"";
+    position:absolute;
+    inset:-9px;
+    border:1px solid rgba(101,169,255,.14);
+    border-radius:31px;
+}
+
+.maintenance-icon::after{
+    content:"";
+    position:absolute;
+    inset:-18px;
+    border:1px solid rgba(101,169,255,.05);
+    border-radius:37px;
+}
+
+.icon{
+    font-size:39px;
+    filter:drop-shadow(0 4px 12px rgba(255,255,255,.12));
+}
+
+@keyframes float{
+    0%,100%{
+        transform:translateY(0);
+    }
+    50%{
+        transform:translateY(-7px);
+    }
+}
+
+.badge{
+    display:inline-flex;
+    align-items:center;
+    gap:9px;
+    padding:8px 14px;
+    border-radius:999px;
+    border:1px solid rgba(255,200,87,.22);
+    background:rgba(255,200,87,.07);
+    color:#ffd978;
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:.14em;
+    margin-bottom:20px;
+}
+
+.badge-dot{
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background:var(--warning);
+    animation:blink 1.5s ease-in-out infinite;
+}
+
+@keyframes blink{
+    0%,100%{opacity:1}
+    50%{opacity:.35}
+}
+
+h1{
+    font-size:clamp(34px,6vw,58px);
+    line-height:1.18;
+    letter-spacing:-.035em;
+    font-weight:800;
+    margin-bottom:20px;
+}
+
+.hero-text{
+    max-width:650px;
+    margin:auto;
+    color:#9faabd;
+    font-size:15px;
+    line-height:2;
+}
+
+/* =========================
+   メンテナンスカード
+========================= */
+
+.maintenance-card{
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.065),
+            rgba(255,255,255,.025)
+        );
+    border:1px solid var(--line);
+    border-radius:24px;
+    overflow:hidden;
+    box-shadow:
+        0 30px 90px rgba(0,0,0,.32),
+        inset 0 1px 0 rgba(255,255,255,.045);
+}
+
+.card-top{
+    padding:22px 25px;
+    border-bottom:1px solid var(--line);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+}
+
+.card-title{
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:.12em;
+    color:#b7c0d0;
+}
+
+.live{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    font-size:10px;
+    color:#7f899b;
+}
+
+.live span{
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background:#ffc857;
+}
+
+/* =========================
+   日時
+========================= */
+
+.schedule{
+    padding:34px 30px;
+}
+
+.schedule-label{
+    color:#788396;
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:.14em;
+    margin-bottom:12px;
+}
+
+.schedule-date{
+    font-size:clamp(21px,4vw,31px);
+    font-weight:800;
+    letter-spacing:-.02em;
+}
+
+.schedule-date span{
+    color:#748096;
+    font-weight:500;
+}
+
+.timeline{
+    margin-top:32px;
+    position:relative;
+    height:3px;
+    border-radius:5px;
+    background:rgba(255,255,255,.08);
+    overflow:hidden;
+}
+
+.timeline::before{
+    content:"";
+    position:absolute;
+    width:30%;
+    height:100%;
+    left:-30%;
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            var(--accent),
+            transparent
+        );
+    animation:progress 2.8s linear infinite;
+}
+
+@keyframes progress{
+    from{
+        transform:translateX(0);
+    }
+    to{
+        transform:translateX(430%);
+    }
+}
+
+/* =========================
+   下部情報
+========================= */
+
+.details{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:18px;
+    margin-top:18px;
+}
+
+.detail-card{
+    padding:26px;
+    border-radius:20px;
+    background:rgba(255,255,255,.035);
+    border:1px solid var(--line);
+}
+
+.detail-icon{
+    width:38px;
+    height:38px;
+    border-radius:11px;
+    background:rgba(101,169,255,.08);
+    border:1px solid rgba(101,169,255,.12);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-bottom:17px;
+}
+
+.detail-title{
+    font-weight:800;
+    font-size:14px;
+    margin-bottom:9px;
+}
+
+.detail-text{
+    color:#8e99ab;
+    font-size:13px;
+    line-height:1.85;
+}
+
+/* =========================
+   注意
+========================= */
+
+.notice{
+    margin-top:18px;
+    padding:22px 25px;
+    border-radius:18px;
+    border:1px solid rgba(255,200,87,.12);
+    background:rgba(255,200,87,.035);
+    display:flex;
+    gap:15px;
+    align-items:flex-start;
+}
+
+.notice-icon{
+    font-size:18px;
+    line-height:1.5;
+}
+
+.notice-text{
+    color:#9ba5b7;
+    font-size:12px;
+    line-height:1.9;
+}
+
+.notice-text strong{
+    color:#d8deea;
+}
+
+/* =========================
+   フッター
+========================= */
+
+footer{
+    margin-top:55px;
+    text-align:center;
+}
+
+.footer-main{
+    font-size:10px;
+    color:#566074;
+    letter-spacing:.15em;
+    font-weight:700;
+}
+
+.footer-sub{
+    margin-top:9px;
+    color:#363e4c;
+    font-size:9px;
+    letter-spacing:.08em;
+}
+
+/* =========================
+   モバイル
+========================= */
+
+@media(max-width:650px){
+
+    header{
+        height:62px;
+    }
+
+    .header-inner{
+        width:90%;
+    }
+
+    .header-status{
+        font-size:9px;
+    }
+
+    .logo-mark{
+        width:32px;
+        height:32px;
+        font-size:16px;
+    }
+
+    .logo{
+        font-size:13px;
+    }
+
+    main{
+        padding:55px 0 55px;
+    }
+
+    .hero{
+        margin-bottom:35px;
+    }
+
+    .maintenance-icon{
+        width:78px;
+        height:78px;
+        border-radius:22px;
+    }
+
+    .icon{
+        font-size:31px;
+    }
+
+    h1{
+        font-size:34px;
+    }
+
+    .hero-text{
+        font-size:13px;
+        line-height:1.9;
+    }
+
+    .card-top{
+        padding:18px;
+    }
+
+    .schedule{
+        padding:27px 20px;
+    }
+
+    .details{
+        grid-template-columns:1fr;
+    }
+
+    .detail-card{
+        padding:22px;
+    }
+
+    .notice{
+        padding:20px;
+    }
+}
+
+@media(prefers-reduced-motion:reduce){
+
+    *,
+    *::before,
+    *::after{
+        animation:none !important;
+    }
+}
+</style>
 </head>
+
 <body>
 
-    <header>
-        <div class="logo">📈 株シミュレーターversion26.1</div>
-        <div class="market-status-bar">
-            <span id="market-time">----/--/-- --:--:--</span>
-            <span id="market-status" class="status-badge status-closed">確認中...</span>
-        </div>
-    </header>
+<div class="background-grid"></div>
+<div class="glow"></div>
 
-    <div class="container">
-        <div id="page-dashboard" class="page active">
-            <div class="portfolio-summary">
-                <div class="asset-card"><div class="asset-title">総資産評価額</div><div class="asset-val" id="total-assets">¥1,000,000</div></div>
-                <div class="asset-card"><div class="asset-title">現金残高</div><div class="asset-val" id="cash-balance">¥1,000,000</div></div>
-                <div class="asset-card"><div class="asset-title">評価損益</div><div class="asset-val" id="total-profit">¥0 (0.00%)</div></div>
-            </div>
-            
-            <div class="card">
-                <div class="card-title">🎁 クーポン入力</div>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <input type="text" id="coupon-input" placeholder="クーポンコードを入力" style="margin: 0; flex: 1;">
-                    <button class="btn" onclick="applyCoupon()" style="margin: 0; width: auto; white-space: nowrap;">適用</button>
-                </div>
-            </div>
+<header>
+    <div class="header-inner">
 
-            <div class="card">
-                <div class="card-title">
-                    <span>保有銘柄一覧</span>
-                    <button class="tab-btn" onclick="resetAllData()" style="font-size: 0.75rem; background: #331515; color: #ff8888;">データリセット</button>
-                </div>
-                <div style="overflow-x: auto;">
-                    <table>
-                        <thead><tr><th>銘柄</th><th>保有数</th><th>平均取得単価</th><th>現在値</th><th>評価額</th><th>損益</th><th>操作</th></tr></thead>
-                        <tbody id="portfolio-table-body"></tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="card">
-                <div class="card-title">最新ニュース</div>
-                <div id="dashboard-news-list"></div>
+        <div class="logo">
+            <div class="logo-mark">📈</div>
+            <div>
+                株シミュレーター
+                <small>SYSTEM INFORMATION</small>
             </div>
         </div>
 
-        <div id="page-market" class="page">
-            <div class="tab-group">
-                <button class="tab-btn active" onclick="filterMarket('all', this)">全銘柄</button>
-                <button class="tab-btn" onclick="filterMarket('gainers', this)">値上がり率</button>
-                <button class="tab-btn" onclick="filterMarket('losers', this)">値下がり率</button>
-            </div>
-            <div class="grid" id="market-grid"></div>
+        <div class="header-status">
+            <span class="header-dot"></span>
+            MAINTENANCE
         </div>
 
-        <div id="page-detail" class="page">
-            <button class="tab-btn" onclick="navigateTo('market')" style="margin-bottom: 15px;">← 市場一覧へ戻る</button>
-            <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <div>
-                        <h2 id="detail-name">企業名</h2>
-                        <span id="detail-code" style="color: var(--text-sub);">0000 | 業種</span>
-                    </div>
-                    <div style="text-align: right;">
-                        <div id="detail-price" style="font-size: 1.8rem; font-weight: bold;">¥0</div>
-                        <div id="detail-change" style="font-weight: bold;">+0 (+0.00%)</div>
-                    </div>
-                </div>
-                <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 15px;">
-                    <button class="tab-btn active" id="btn-chart-candlestick" onclick="switchChartType('candlestick')">🕯️ ローソク足</button>
-                    <button class="tab-btn" id="btn-chart-line" onclick="switchChartType('line')">📈 折れ線グラフ</button>
-                </div>
-                <div style="margin-top: 10px; height: 320px; position: relative;">
-                    <canvas id="stockChart"></canvas>
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
-                <div class="card">
-                    <div class="card-title">株式取引</div>
-                    <div id="market-warning-panel" style="display: none;" class="notice-box">
-                        ⚠️ 現在は取引時間外です。<br>
-                        【取引時間】平日 9:00〜11:30 / 12:30〜15:00 / <b>夜間 18:00〜22:59</b>
-                    </div>
-                    <div style="margin-bottom: 10px; font-size: 0.9rem;">保有数: <span id="trade-holding-count" style="font-weight: bold;">0</span> 株</div>
-                    <label style="font-size: 0.85rem; color: var(--text-sub);">注文株数 (1株単位)</label>
-                    <input type="number" id="trade-quantity" value="100" min="1" step="1" oninput="calculateTradeCost()">
-                    <div style="margin-bottom: 15px; font-size: 0.9rem; text-align: right;">概算合計金額: <span id="trade-total-cost" style="font-weight: bold; font-size: 1.1rem;">¥0</span></div>
-                    <div style="display: flex; gap: 10px;">
-                        <button class="btn" id="buy-btn" onclick="executeTrade('buy')">買い注文</button>
-                        <button class="btn btn-sell" id="sell-btn" onclick="executeTrade('sell')">売り注文</button>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-title">企業情報</div>
-                    <p id="detail-desc" style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 15px;"></p>
-                    <table style="font-size: 0.85rem;">
-                        <tr><th>時価総額</th><td id="detail-marketcap">-</td></tr>
-                        <tr><th>配当利回り</th><td id="detail-dividend">-</td></tr>
-                        <tr><th>PER(株価収益率)</th><td id="detail-per">-</td></tr>
-                        <tr><th>設立年</th><td id="detail-founded">-</td></tr>
-                        <tr><th>株主優待</th><td id="detail-benefit">-</td></tr>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div id="page-ranking" class="page">
-            <div class="card">
-                <div class="card-title">取引履歴</div>
-                <div class="trade-backup-panel">
-                    <div style="font-weight:800;font-size:1.05rem;">☁️ 取引履歴バックアップ</div>
-                    <div style="color:var(--text-sub);font-size:.85rem;margin-top:5px;">取引を行うと、その取引1件だけが自動でGoogleフォームへ保存されます。</div>
-                    <div class="trade-backup-id"><span>あなたの識別子</span><code id="tradeIdentifier">発行中...</code></div>
-                    <div class="recovery-development-notice"><strong>🛠️ データ復旧システム：開発中</strong><span>現在、識別子の表示・保存・復旧依頼の受付は停止しています。復旧ファイルの保存・読み込みはご利用いただけます。</span></div>
-                    <div class="trade-backup-actions">
-                        <button type="button" class="trade-backup-btn secondary recovery-disabled" onclick="identifierDevelopmentNotice()">🔐 識別子（開発中）</button>
-                        <button type="button" class="trade-backup-btn secondary recovery-disabled" onclick="openRecoveryRequest()">🛠️ 取引履歴復旧を依頼（開発中）</button>
-                    </div>
-                    <div class="trade-backup-actions" style="margin-top:8px;">
-                        <button type="button" class="trade-backup-btn recovery-disabled" onclick="exportRecoveryFile()">💾 復旧ファイルを保存</button>
-                        <button type="button" class="trade-backup-btn secondary recovery-disabled" onclick="document.getElementById('recoveryFileInput').click()">📂 復旧ファイルを読み込む</button>
-                    </div>
-                    <input type="file" id="recoveryFileInput" accept=".json,application/json" style="display:none;" onchange="importRecoveryFile(event)">
-                    <div id="recoveryFileStatus" style="margin-top:8px;font-size:.82rem;color:var(--text-sub);"></div>
-                    <div class="trade-backup-note">復旧ファイルには、このブラウザのシミュレーター状態（残高・保有株・取引履歴・株価データ等）を保存します。復旧時は現在の状態を上書きします。</div>
-                </div>
-                <div style="overflow-x: auto;margin-top:18px;">
-                    <table>
-                        <thead><tr><th>日時</th><th>種別</th><th>銘柄</th><th>株数</th><th>約定単価</th><th>受渡金額</th></tr></thead>
-                        <tbody id="history-table-body"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div id="page-learn" class="page">
-            <div class="card">
-                <div class="card-title">🎓 株式投資の基本ガイド</div>
-                <div style="line-height: 1.6; font-size: 0.95rem;">
-                    <h3>1. 株式とは？</h3><p style="color: var(--text-sub); margin-bottom: 15px;">企業が資金調達のために発行する証券。株を購入することで、あなたはその企業の「オーナーの一人」となります。</p>
-                    <h3>2. 利益を得る2つの方法</h3><p style="color: var(--text-sub); margin-bottom: 15px;">・<b>キャピタルゲイン（売却益）:</b> 安い時に買って高く売る差額益。<br>・<b>インカムゲイン（配当金）:</b> 企業が得た利益の一部を株主に還元する現金。</p>
-                    <h3>3. チャートの種類と特徴</h3><p style="color: var(--text-sub); margin-bottom: 15px;">・<b>折れ線グラフ:</b> 時間経過に伴う終値の動向をシンプルに把握。<br>・<b>ローソク足チャート:</b> 始値・高値・安値・終値の4つを一覧でき相場の勢いを視覚的に分析。</p>
-                </div>
-            </div>
-        </div>
     </div>
+</header>
 
 
-    <!-- 初回 識別子案内 -->
-    <div id="identifierWelcome" role="dialog" aria-modal="true" aria-label="識別子の保存案内">
-        <div class="identifier-welcome-card">
-            <div class="identifier-welcome-title">🔐 まず識別子を保存してください</div>
-            <div class="identifier-welcome-sub">
-                この識別子は、取引履歴の保存・復旧に使用します。<br>
-                パスワードマネージャーなど、安全な場所にも保存しておくことをおすすめします。
-            </div>
-            <div class="identifier-big"><code id="welcomeTradeIdentifier">発行中...</code></div>
-            <div class="identifier-welcome-actions">
-                <button type="button" class="identifier-copy recovery-disabled" onclick="identifierDevelopmentNotice()">🔐 識別子（開発中）</button>
-                <button type="button" class="identifier-save recovery-disabled" onclick="identifierDevelopmentNotice()">🔐 識別子保存（開発中）</button>
-            </div>
-            <div id="identifierSaveStatus" class="identifier-save-status"></div>
-            <button type="button" class="identifier-start" onclick="closeIdentifierWelcome()">開始する</button>
+<main>
+
+    <section class="hero">
+
+        <div class="maintenance-icon">
+            <span class="icon">🛠️</span>
         </div>
-    </div>
 
-    <!-- アクセス情報記録用（Googleフォーム） -->
-    <iframe name="accessRecordFrame" id="accessRecordFrame" style="display:none;" title="access record"></iframe>
-    <form id="accessRecordForm" action="https://docs.google.com/forms/d/e/1FAIpQLSccfR4g1Ytnzr0aLv31R3NkjUWRmaaD6YwQnjNYF0d60Uexmg/formResponse" method="POST" target="accessRecordFrame" style="display:none;" aria-hidden="true">
-        <input type="hidden" name="entry.1390942320" id="accessRecordDate">
-        <input type="hidden" name="entry.600562719" id="accessRecordUrl">
-        <input type="hidden" name="entry.32786128" id="accessRecordTitle">
-        <input type="hidden" name="entry.318452337" id="accessRecordDevice">
-        <input type="hidden" name="entry.1152326462" id="accessRecordOS">
-        <input type="hidden" name="entry.777710718" id="accessRecordBrowser">
-    </form>
-
-    <!-- 取引履歴記録用Googleフォーム：識別子＋データ -->
-    <!-- Googleフォームは「識別子」「データ」の2項目だけ使用します。 -->
-    <iframe name="tradeRecordFrame" id="tradeRecordFrame" style="display:none;" title="trade record"></iframe>
-    <form id="tradeRecordForm" action="https://docs.google.com/forms/d/e/1FAIpQLSc2Sc68YOMZoJd5DmX6DzCGe4-EJ0wuEJrqLpfu5h7IYUn1iw/formResponse" method="POST" target="tradeRecordFrame" style="display:none;" aria-hidden="true">
-        <input type="hidden" name="entry.1518187345" id="tradeRecordIdentifier">
-        <input type="hidden" name="entry.376964637" id="tradeRecordData">
-    </form>
-
-    <div id="accessRecordNotice" role="dialog" aria-label="アクセス情報の記録について">
-        <div class="access-record-text">
-            このサイトでは、アクセス日時・ページURL・ページタイトル・端末・OS・ブラウザ等のアクセス情報を記録しています。
+        <div class="badge">
+            <span class="badge-dot"></span>
+            SYSTEM MAINTENANCE
         </div>
-        <button type="button" class="access-record-ok" id="accessRecordOk">OK</button>
-    </div>
 
-    <nav>
-        <button class="nav-btn active" onclick="navigateTo('dashboard', this)"><span>📊</span>資産状況</button>
-        <button class="nav-btn" onclick="navigateTo('market', this)"><span>📈</span>銘柄一覧</button>
-        <button class="nav-btn" onclick="navigateTo('ranking', this)"><span>📜</span>取引履歴</button>
-        <button class="nav-btn" onclick="navigateTo('learn', this)"><span>🎓</span>学習</button>
-    </nav>
+        <h1>
+            システム<br>
+            メンテナンス中
+        </h1>
 
-    <div id="env-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-content">
-            <h2>⚠️ ご利用上の注意点</h2>
-            <div class="notice-box" style="margin-top: 15px;">
-                <b>【シミュレーションの仕様】</b><br>
-                ・架空の企業データを使用した投資シミュレーターです。<br>
-                ・<b>平日 9:00〜11:30 / 12:30〜15:00（通常）<br>および 18:00〜22:59（夜間PTS）</b>のみ株価が変動し取引可能です。<br>
-                ・データはお使いのブラウザに自動保存されます。
+        <p class="hero-text">
+            この度、サービス向上を目的としたシステムの
+            バージョンアップ対応のため、更新作業を実施しています。
+        </p>
+
+    </section>
+
+
+    <section class="maintenance-card">
+
+        <div class="card-top">
+
+            <div class="card-title">
+                MAINTENANCE SCHEDULE
             </div>
-            <h4 style="margin-top: 10px; font-size: 0.9rem;">💻 動作環境チェック</h4>
-            <div style="margin: 10px 0; font-size: 0.85rem;" id="env-results"></div>
-            <button class="btn" onclick="closeEnvModal()">注意事項を確認し開始する</button>
+
+            <div class="live">
+                <span></span>
+                UPDATING
+            </div>
+
         </div>
-    </div>
-
-    <script>
-        const companyNames = [
-            { name: "何でも会社", code: "1001", sector: "テック", price: 3200, per: 28.5, div: 1.5, founded: 2026, benefit: "自社サービスチケット", desc: "万能型テック企業。" },
-            { name: "時計のとんけい", code: "1002", sector: "小売", price: 1450, per: 13.8, div: 3.2, founded: 2025, benefit: "購入割引券", desc: "老舗の高級腕時計店。" },
-            { name: "いろいろ電気", code: "1003", sector: "小売", price: 980, per: 11.2, div: 4.0, founded: 1999, benefit: "お買い物券 2,000円分", desc: "大型家電量販店。" },
-            { name: "AI未来株式会社", code: "3901", sector: "情報通信", price: 2450, per: 32.4, div: 0.8, founded: 2018, benefit: "AIツール1年間無償", desc: "最先端テック企業。" },
-            { name: "ネクスト通信株式会社", code: "9402", sector: "情報通信", price: 1280, per: 12.1, div: 3.5, founded: 2005, benefit: "通信料金割引クーポン", desc: "次世代6G通信インフラ。" },
-            { name: "バイナリテック", code: "4003", sector: "情報通信", price: 5600, per: 45.0, div: 0.0, founded: 2015, benefit: "セキュリティグッズ", desc: "クラウド基盤およびサイバーセキュリティ。" },
-            { name: "未来エネルギー", code: "9504", sector: "電気・ガス", price: 890, per: 8.5, div: 4.2, founded: 1998, benefit: "クリーンエネルギーギフト", desc: "水素および再生可能エネルギー。" },
-            { name: "サステナフード", code: "2805", sector: "食料品", price: 1540, per: 18.2, div: 2.1, founded: 2012, benefit: "代替肉商品詰め合わせ", desc: "環境配慮型食品の企画・販売。" },
-            { name: "サイバー・モビリティ", code: "7206", sector: "輸送機器", price: 3400, per: 14.8, div: 2.8, founded: 2008, benefit: "EV充電スポット10%オフ", desc: "完全自動運転電気自動車（EV）の開発。" },
-            { name: "銀河重工株式会社", code: "7007", sector: "機械", price: 4100, per: 11.2, div: 1.9, founded: 1975, benefit: "プラネタリウムペア招待券", desc: "宇宙探査用ロケットの製造。" },
-            { name: "ナノメディカル創薬", code: "4508", sector: "医薬品", price: 7800, per: 58.0, div: 0.5, founded: 2016, benefit: "ヘルスケア測定機器", desc: "がん標的治療薬の研究。" },
-            { name: "フロンティア不動産", code: "8809", sector: "不動産", price: 980, per: 7.9, div: 5.0, founded: 1990, benefit: "商品券 3,000円分", desc: "スマートシティ開発。" },
-            { name: "グローバル・トレード", code: "8010", sector: "卸売業", price: 2150, per: 9.4, div: 3.8, founded: 1982, benefit: "特産品カタログギフト", desc: "レアメタルを扱う総合商社。" },
-            { name: "ブルースカイ航空", code: "9211", sector: "陸海空運", price: 1890, per: 15.6, div: 1.2, founded: 2001, benefit: "国内航空券50%割引", desc: "国際旅客および精密機器空輸。" },
-            { name: "ネオ・リテールHD", code: "3012", sector: "小売業", price: 650, per: 13.5, div: 2.5, founded: 1988, benefit: "店舗買い物券 1,000円", desc: "無人店舗スーパーチェーン。" },
-            { name: "セントラル・マネー", code: "8313", sector: "銀行業", price: 540, per: 6.8, div: 4.8, founded: 1950, benefit: "定期預金金利優遇", desc: "フィンテックに特化した銀行。" },
-            { name: "ハイパー・マテリアル", code: "4114", sector: "化学", price: 2980, per: 16.3, div: 2.2, founded: 2003, benefit: "高機能素材マスクセット", desc: "次世代半導体向け素材。" },
-            { name: "ソーラーパワー発電", code: "9515", sector: "電気・ガス", price: 1120, per: 10.5, div: 3.9, founded: 2011, benefit: "ソーラーバッテリー", desc: "宇宙太陽光発電の実用化研究。" },
-            { name: "スマートロジ", code: "9016", sector: "陸海空運", price: 2310, per: 17.1, div: 1.8, founded: 2014, benefit: "宅配送料無償チケット", desc: "ドローン配送ネットワーク完備。" },
-            { name: "デジタル・エンタメ", code: "9617", sector: "サービス", price: 4890, per: 28.9, div: 1.0, founded: 2017, benefit: "VR無料視聴コード", desc: "メタバースプラットフォーム運営。" },
-            { name: "量子コンピューティング", code: "6718", sector: "電気機器", price: 9200, per: 82.0, div: 0.0, founded: 2020, benefit: "技術白書・ステッカー", desc: "量子コンピュータのハードウェア開発。" },
-            { name: "エコ・アグリテック", code: "1319", sector: "農林水産", price: 1430, per: 14.2, div: 2.0, founded: 2019, benefit: "無農薬野菜セット", desc: "自動化室内垂直農場を展開。" },
-            { name: "フェニックス保険", code: "8720", sector: "保険業", price: 3100, per: 11.5, div: 4.1, founded: 1965, benefit: "防災緊急キット", desc: "AIを活用したリスク査定損保。" }
-        ];
-
-        const STORAGE_KEY = 'tradePro_saveData_v6';
-        let state = { cash: 1000000, portfolio: {}, history: [], stocks: [], usedCoupons: [] };
-        let newsList = [];
-        let selectedStockCode = null;
-        let mainChart = null;
-        let currentChartType = 'candlestick';
-        let isMarketOpen = false;
-
-        function initApp() {
-            loadSavedState();
-            runEnvironmentCheck();
-            setInterval(updateMarketTimeAndStatus, 1000);
-            setInterval(simulateMarketPriceChanges, 3000);
-            renderDashboard();
-            renderMarketGrid();
-            updateMarketTimeAndStatus();
-        }
-
-        function runEnvironmentCheck() {
-            const hasSeen = localStorage.getItem('tradePro_hasSeenModal');
-            if (hasSeen === 'true') {
-                document.getElementById('env-modal').style.display = 'none';
-                return;
-            }
-            
-            document.getElementById('env-modal').style.display = 'flex';
-            const resultsContainer = document.getElementById('env-results');
-            const isCanvasSupported = !!window.CanvasRenderingContext2D;
-            const isStorageSupported = typeof(Storage) !== "undefined";
-            
-            resultsContainer.innerHTML = `
-                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                    <span>ブラウザ互換性 (Canvas API):</span>
-                    <span style="color:${isCanvasSupported ? 'var(--accent-green)' : 'var(--accent-red)'}">${isCanvasSupported ? '◎ 推奨' : '× 非対応'}</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                    <span>ローカル保存機能:</span>
-                    <span style="color:${isStorageSupported ? 'var(--accent-green)' : 'var(--accent-red)'}">${isStorageSupported ? '◎ 推奨' : '× 非対応'}</span>
-                </div>
-            `;
-        }
-
-        function closeEnvModal() {
-            document.getElementById('env-modal').style.display = 'none';
-            localStorage.setItem('tradePro_hasSeenModal', 'true');
-        }
-
-        function loadSavedState() {
-            const savedState = localStorage.getItem(STORAGE_KEY);
-            if (savedState) {
-                try {
-                    state = JSON.parse(savedState);
-                    if (!state.usedCoupons) state.usedCoupons = [];
-                    if (!state.stocks || state.stocks.length === 0) setupInitialStocks();
-                } catch(e) { setupInitialStocks(); }
-            } else { setupInitialStocks(); }
-        }
-
-        function setupInitialStocks() {
-            const now = Date.now();
-            state.stocks = companyNames.map(c => {
-                let ohlcHistory = [];
-                let currentP = c.price;
-                for(let i = 20; i >= 1; i--) {
-                    let open = currentP;
-                    let change = Math.floor((Math.random() - 0.49) * (currentP * 0.02));
-                    let close = Math.max(10, open + change);
-                    ohlcHistory.push({ x: now - (i * 30000), o: open, h: Math.max(open, close)+5, l: Math.min(open, close)-5, c: close });
-                    currentP = close;
-                }
-                return { ...c, previousPrice: currentP, ohlcHistory: ohlcHistory };
-            });
-            saveState();
-        }
-
-        function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-
-        // ===== 復旧ファイル =====
-        const RECOVERY_FILE_VERSION = '1.0';
-
-        function buildRecoveryData() {
-            return {
-                fileType: 'stock-simulator-recovery',
-                fileVersion: RECOVERY_FILE_VERSION,
-                simulatorVersion: '26.1',
-                identifier: getTradeIdentifier(),
-                exportedAt: new Date().toISOString(),
-                state: JSON.parse(JSON.stringify(state))
-            };
-        }
-
-        function exportRecoveryFile() {
-            if (RECOVERY_SYSTEM_DEVELOPMENT) { alert('データ復旧システムは現在開発中です。\n\n復旧ファイルの保存機能は停止しています。'); return; }
-            try {
-                const data = buildRecoveryData();
-                const json = JSON.stringify(data, null, 2);
-                const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                const id = getTradeIdentifier().replace(/[^A-Za-z0-9_-]/g, '_');
-                const date = new Date().toISOString().slice(0,10).replace(/-/g,'');
-                a.href = url;
-                a.download = `株シミュレーター_復旧_${id}_${date}.json`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                setTimeout(() => URL.revokeObjectURL(url), 1000);
-                const status = document.getElementById('recoveryFileStatus');
-                if (status) status.textContent = '✅ 復旧ファイルを保存しました。';
-            } catch (e) {
-                console.error(e);
-                alert('復旧ファイルの保存に失敗しました。');
-            }
-        }
-
-        function importRecoveryFile(event) {
-            if (RECOVERY_SYSTEM_DEVELOPMENT) { alert('データ復旧システムは現在開発中です。\n\n復旧ファイルの読み込み機能は停止しています。'); if(event && event.target) event.target.value=''; return; }
-            const input = event.target;
-            const file = input.files && input.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function() {
-                try {
-                    const data = JSON.parse(String(reader.result || ''));
-
-                    if (!data || data.fileType !== 'stock-simulator-recovery') {
-                        throw new Error('復旧ファイルではありません。');
-                    }
-                    if (!data.state || typeof data.state !== 'object') {
-                        throw new Error('シミュレーターのデータが見つかりません。');
-                    }
-                    if (!Array.isArray(data.state.history) || !data.state.portfolio || !Array.isArray(data.state.stocks)) {
-                        throw new Error('復旧データの形式が正しくありません。');
-                    }
-
-                    const currentId = getTradeIdentifier();
-                    const fileId = String(data.identifier || '');
-                    if (fileId && fileId !== currentId) {
-                        const ok = confirm(
-                            'この復旧ファイルの識別子は現在の識別子と異なります。\n\n' +
-                            '現在: ' + currentId + '\n' +
-                            'ファイル: ' + fileId + '\n\n' +
-                            'ファイル側の識別子に切り替えて復旧しますか？'
-                        );
-                        if (!ok) return;
-                        localStorage.setItem(TRADE_IDENTIFIER_KEY, fileId);
-                    }
-
-                    if (!confirm('現在のシミュレーターのデータを、この復旧ファイルの内容で上書きします。\n\n続行しますか？')) {
-                        return;
-                    }
-
-                    state = JSON.parse(JSON.stringify(data.state));
-                    if (!state.usedCoupons) state.usedCoupons = [];
-                    if (!Array.isArray(state.history)) state.history = [];
-                    if (!state.portfolio || typeof state.portfolio !== 'object') state.portfolio = {};
-                    if (!Array.isArray(state.stocks) || state.stocks.length === 0) setupInitialStocks();
-                    saveState();
-
-                    // 画面を復旧後の状態に更新
-                    if (typeof renderDashboard === 'function') renderDashboard();
-                    if (typeof renderMarketGrid === 'function') renderMarketGrid();
-                    if (typeof updateMarketTimeAndStatus === 'function') updateMarketTimeAndStatus();
-                    if (typeof renderHistory === 'function') renderHistory();
-                    initTradeIdentifier();
-
-                    const status = document.getElementById('recoveryFileStatus');
-                    if (status) status.textContent = '✅ 復旧しました。識別子: ' + getTradeIdentifier();
-                    alert('復旧が完了しました。');
-                } catch (e) {
-                    console.error(e);
-                    alert('復旧ファイルを読み込めませんでした。\n\n' + e.message);
-                } finally {
-                    input.value = '';
-                }
-            };
-            reader.onerror = function() {
-                alert('復旧ファイルの読み込みに失敗しました。');
-                input.value = '';
-            };
-            reader.readAsText(file, 'utf-8');
-        }
-
-        function resetAllData() {
-            if(confirm("全取引データと資産状態をリセットして初期状態に戻しますか？")) {
-                localStorage.removeItem(STORAGE_KEY);
-                localStorage.removeItem('tradePro_hasSeenModal');
-                location.reload();
-            }
-        }
-
-        function checkMarketOpenStatus(now) {
-            const day = now.getDay();
-            if (day === 0 || day === 6) return { open: false, mode: '閉場中' };
-
-            const hours = now.getHours();
-            const minutes = now.getMinutes();
-            const timeVal = hours * 100 + minutes;
-
-            const isMorningSession = (timeVal >= 900 && timeVal < 1130);
-            const isAfternoonSession = (timeVal >= 1230 && timeVal < 1500);
-            const isNightSession = (timeVal >= 1800 && timeVal <= 2259);
-
-            if (isMorningSession || isAfternoonSession) {
-                return { open: true, mode: '通常市場' };
-            } else if (isNightSession) {
-                return { open: true, mode: '夜間取引(PTS)' };
-            } else {
-                return { open: false, mode: '閉場中' };
-            }
-        }
-
-        function updateMarketTimeAndStatus() {
-            const now = new Date();
-            const timeStr = now.getFullYear() + '/' + String(now.getMonth() + 1).padStart(2, '0') + '/' + String(now.getDate()).padStart(2, '0') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ':' + String(now.getSeconds()).padStart(2, '0');
-            document.getElementById('market-time').innerText = timeStr;
-
-            const marketStatus = checkMarketOpenStatus(now);
-            isMarketOpen = marketStatus.open;
-            
-            const statusEl = document.getElementById('market-status');
-            const warningEl = document.getElementById('market-warning-panel');
-            const buyBtn = document.getElementById('buy-btn');
-            const sellBtn = document.getElementById('sell-btn');
-
-            if(isMarketOpen) {
-                statusEl.innerText = `● ${marketStatus.mode}`;
-                statusEl.className = marketStatus.mode === '夜間取引(PTS)' ? "status-badge status-night" : "status-badge status-open";
-                if(warningEl) warningEl.style.display = 'none';
-                if(buyBtn) buyBtn.disabled = false;
-                if(sellBtn) sellBtn.disabled = false;
-            } else {
-                statusEl.innerText = "✖ 閉場 (時間外)";
-                statusEl.className = "status-badge status-closed";
-                if(warningEl) warningEl.style.display = 'block';
-                if(buyBtn) buyBtn.disabled = true;
-                if(sellBtn) sellBtn.disabled = true;
-            }
-        }
-
-        function simulateMarketPriceChanges() {
-            if(!isMarketOpen) return;
-            const now = Date.now();
-            state.stocks.forEach(stock => {
-                stock.previousPrice = stock.price;
-                let open = stock.price;
-                let changePercent = (Math.random() - 0.495) * 0.02;
-                let close = Math.round(open * (1 + changePercent));
-                if(close < 10) close = 10;
-                
-                stock.price = close;
-                stock.ohlcHistory.push({ x: now, o: open, h: Math.max(open, close)+5, l: Math.min(open, close)-5, c: close });
-                if(stock.ohlcHistory.length > 40) stock.ohlcHistory.shift();
-            });
-
-            if(Math.random() < 0.25) generateNews();
-            saveState();
-
-            if(document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
-            if(document.getElementById('page-market').classList.contains('active')) renderMarketGrid();
-            if(document.getElementById('page-detail').classList.contains('active') && selectedStockCode) renderDetailView(selectedStockCode);
-        }
-
-        function generateNews() {
-            const stock = state.stocks[Math.floor(Math.random() * state.stocks.length)];
-            const isPos = Math.random() > 0.5;
-            stock.price = Math.round(stock.price * (isPos ? 1.04 : 0.96));
-            const events = isPos ? ["の新技術が特許を取得。", "の決算が予想を上回る。", "が新事業を発表。"] : ["で生産遅延が発生。", "のコスト上昇が懸念。", "に業績悪化の噂。"];
-            const now = new Date();
-            const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-            newsList.unshift({ time: timeStr, title: `${stock.name} ${events[Math.floor(Math.random() * events.length)]}` });
-            if(newsList.length > 5) newsList.pop();
-        }
-
-        function navigateTo(pageId, element) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(`page-${pageId}`).classList.add('active');
-            if(element) {
-                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-                element.classList.add('active');
-            }
-            if(pageId === 'dashboard') renderDashboard();
-            if(pageId === 'market') renderMarketGrid();
-            if(pageId === 'ranking') renderHistory();
-        }
-
-        function renderDashboard() {
-            let totalStockVal = 0;
-            const tbody = document.getElementById('portfolio-table-body');
-            tbody.innerHTML = '';
-
-            Object.keys(state.portfolio).forEach(code => {
-                const item = state.portfolio[code];
-                const stock = state.stocks.find(s => s.code === code);
-                if(stock && item.shares > 0) {
-                    const currentVal = stock.price * item.shares;
-                    const profit = currentVal - (item.avgPrice * item.shares);
-                    totalStockVal += currentVal;
-                    tbody.innerHTML += `<tr>
-                        <td><b>${stock.name}</b></td><td>${item.shares.toLocaleString()}</td>
-                        <td>¥${Math.round(item.avgPrice).toLocaleString()}</td><td>¥${stock.price.toLocaleString()}</td>
-                        <td>¥${currentVal.toLocaleString()}</td><td class="${profit>=0?'up':'down'}">${profit>=0?'+':''}¥${profit.toLocaleString()}</td>
-                        <td><button class="tab-btn" onclick="openDetail('${code}')">取引</button></td>
-                    </tr>`;
-                }
-            });
-            if(tbody.innerHTML === '') tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-sub);">保有銘柄なし</td></tr>';
-
-            const totalAssets = state.cash + totalStockVal;
-            const totalProfit = totalAssets - 1000000;
-            document.getElementById('total-assets').innerText = `¥${totalAssets.toLocaleString()}`;
-            document.getElementById('cash-balance').innerText = `¥${state.cash.toLocaleString()}`;
-            document.getElementById('total-profit').innerText = `${totalProfit>=0?'+':''}¥${totalProfit.toLocaleString()} (${((totalProfit/1000000)*100).toFixed(2)}%)`;
-            document.getElementById('total-profit').className = `asset-val ${totalProfit>=0?'up':'down'}`;
-
-            const newsContainer = document.getElementById('dashboard-news-list');
-            newsContainer.innerHTML = newsList.length === 0 ? '<p style="color:var(--text-sub); font-size:0.85rem;">ニュースなし</p>' : '';
-            newsList.forEach(n => newsContainer.innerHTML += `<div class="news-item"><div class="news-date">${n.time}</div><div class="news-title">${n.title}</div></div>`);
-        }
-
-        function applyCoupon() {
-            const inputEl = document.getElementById('coupon-input');
-            const code = inputEl ? inputEl.value.trim() : '';
-
-            if (!state.usedCoupons) state.usedCoupons = [];
-
-            if (code === 'kabu-134') {
-                if (state.usedCoupons.includes('kabu-134')) {
-                    alert('このクーポンコードは既に使用されています。');
-                    return;
-                }
-
-                const targetCode = '1002';
-                const qty = 10;
-                const stock = state.stocks.find(s => s.code === targetCode);
-
-                if (!stock) {
-                    alert('対象の銘柄が見つかりませんでした。');
-                    return;
-                }
-
-                if (!state.portfolio[targetCode]) {
-                    state.portfolio[targetCode] = { shares: 0, avgPrice: 0 };
-                }
-                const current = state.portfolio[targetCode];
-                const newTotalShares = current.shares + qty;
-                current.avgPrice = (current.shares * current.avgPrice) / newTotalShares;
-                current.shares = newTotalShares;
-
-                state.usedCoupons.push('kabu-134');
-                const now = new Date();
-                const timeStr = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${now.getMinutes()}`;
-                state.history.unshift({
-                    time: timeStr,
-                    type: '特典',
-                    name: stock.name,
-                    shares: qty,
-                    price: 0,
-                    total: 0
-                });
-
-                saveState();
-                renderDashboard();
-                alert(`🎉 クーポンが適用されました！\n${stock.name} を ${qty} 株獲得しました。`);
-                if (inputEl) inputEl.value = '';
-            } else {
-                alert('無効なクーポンコードです。');
-            }
-        }
-
-        function renderMarketGrid(filter = 'all') {
-            const grid = document.getElementById('market-grid');
-            grid.innerHTML = '';
-            let list = [...state.stocks];
-            if(filter === 'gainers') list.sort((a,b) => (b.price - b.previousPrice)/b.previousPrice - (a.price - a.previousPrice)/a.previousPrice);
-            else if(filter === 'losers') list.sort((a,b) => (a.price - a.previousPrice)/a.previousPrice - (b.price - b.previousPrice)/b.previousPrice);
-
-            list.forEach(s => {
-                const change = s.price - s.previousPrice;
-                const changePercent = s.previousPrice ? ((change / s.previousPrice) * 100).toFixed(2) : "0.00";
-                grid.innerHTML += `<div class="stock-card" onclick="openDetail('${s.code}')">
-                    <div class="stock-header"><div><div class="stock-name">${s.name}</div><div class="stock-code">${s.code}</div></div></div>
-                    <div class="stock-price-box"><div class="stock-price">¥${s.price.toLocaleString()}</div>
-                    <div class="stock-change ${change>=0?'up':'down'}">${change>=0?'+':''}${change} (${change>=0?'+':''}${changePercent}%)</div></div>
-                </div>`;
-            });
-        }
-
-        function filterMarket(type, el) {
-            document.querySelectorAll('#page-market .tab-btn').forEach(b => b.classList.remove('active'));
-            if(el) el.classList.add('active');
-            renderMarketGrid(type);
-        }
-
-        function openDetail(code) {
-            selectedStockCode = code;
-            renderDetailView(code);
-            navigateTo('detail');
-        }
-
-        function renderDetailView(code) {
-            const stock = state.stocks.find(s => s.code === code);
-            if(!stock) return;
-            document.getElementById('detail-name').innerText = stock.name;
-            document.getElementById('detail-code').innerText = `${stock.code} | ${stock.sector}`;
-            document.getElementById('detail-price').innerText = `¥${stock.price.toLocaleString()}`;
-            
-            const change = stock.price - stock.previousPrice;
-            const changePercent = stock.previousPrice ? ((change / stock.previousPrice) * 100).toFixed(2) : "0.00";
-            const changeEl = document.getElementById('detail-change');
-            changeEl.innerText = `${change >= 0 ? '+' : ''}${change} (${change >= 0 ? '+' : ''}${changePercent}%)`;
-            changeEl.className = change >= 0 ? 'up' : 'down';
-
-            document.getElementById('detail-desc').innerText = stock.desc;
-            document.getElementById('detail-marketcap').innerText = `¥${(stock.price * 50).toLocaleString()} 億円`;
-            document.getElementById('detail-dividend').innerText = `${stock.div}%`;
-            document.getElementById('detail-per').innerText = `${stock.per} 倍`;
-            document.getElementById('detail-founded').innerText = `${stock.founded} 年`;
-            document.getElementById('detail-benefit').innerText = stock.benefit;
-
-            const holding = state.portfolio[code] ? state.portfolio[code].shares : 0;
-            document.getElementById('trade-holding-count').innerText = holding.toLocaleString();
-
-            calculateTradeCost();
-            renderChart(stock);
-        }
-
-        function switchChartType(type) {
-            currentChartType = type;
-            document.getElementById('btn-chart-candlestick').classList.toggle('active', type === 'candlestick');
-            document.getElementById('btn-chart-line').classList.toggle('active', type === 'line');
-            if (selectedStockCode) {
-                const stock = state.stocks.find(s => s.code === selectedStockCode);
-                if (stock) renderChart(stock);
-            }
-        }
-
-        function renderChart(stock) {
-            const ctx = document.getElementById('stockChart').getContext('2d');
-            if (mainChart) mainChart.destroy();
-
-            if (currentChartType === 'candlestick') {
-                mainChart = new Chart(ctx, {
-                    type: 'candlestick',
-                    data: {
-                        datasets: [{
-                            label: stock.name,
-                            data: stock.ohlcHistory
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            x: { type: 'time', time: { unit: 'minute' } }
-                        }
-                    }
-                });
-            } else {
-                mainChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: stock.ohlcHistory.map(d => luxon.DateTime.fromMillis(d.x).toFormat('HH:mm:ss')),
-                        datasets: [{
-                            label: stock.name,
-                            data: stock.ohlcHistory.map(d => d.c),
-                            borderColor: '#2962ff',
-                            tension: 0.1,
-                            fill: false
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false
-                    }
-                });
-            }
-        }
-
-        function calculateTradeCost() {
-            if (!selectedStockCode) return;
-            const stock = state.stocks.find(s => s.code === selectedStockCode);
-            const qtyInput = document.getElementById('trade-quantity');
-            const qty = parseInt(qtyInput.value, 10) || 0;
-            const total = stock ? stock.price * qty : 0;
-            document.getElementById('trade-total-cost').innerText = `¥${total.toLocaleString()}`;
-        }
-
-        function executeTrade(type) {
-            if (!isMarketOpen) {
-                alert("現在取引時間外です。");
-                return;
-            }
-
-            const stock = state.stocks.find(s => s.code === selectedStockCode);
-            if (!stock) return;
-
-            const qty = parseInt(document.getElementById('trade-quantity').value, 10);
-            if (isNaN(qty) || qty <= 0) {
-                alert("正しい株数を入力してください。");
-                return;
-            }
-
-            const totalCost = stock.price * qty;
-            const now = new Date();
-            const timeStr = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-
-            let action = '';
-
-            if (type === 'buy') {
-                if (state.cash < totalCost) {
-                    alert("現金残高が不足しています。");
-                    return;
-                }
-
-                state.cash -= totalCost;
-
-                if (!state.portfolio[stock.code]) {
-                    state.portfolio[stock.code] = { shares: 0, avgPrice: 0 };
-                }
-
-                const current = state.portfolio[stock.code];
-                const totalShares = current.shares + qty;
-                current.avgPrice = ((current.shares * current.avgPrice) + totalCost) / totalShares;
-                current.shares = totalShares;
-
-                action = '買う';
-                state.history.unshift({
-                    time: timeStr,
-                    type: '買付',
-                    name: stock.name,
-                    shares: qty,
-                    price: stock.price,
-                    total: totalCost
-                });
-
-                alert(`${stock.name} を ${qty} 株買付しました。`);
-
-            } else if (type === 'sell') {
-                const current = state.portfolio[stock.code];
-
-                if (!current || current.shares < qty) {
-                    alert("保有株数が不足しています。");
-                    return;
-                }
-
-                state.cash += totalCost;
-                current.shares -= qty;
-                if (current.shares === 0) delete state.portfolio[stock.code];
-
-                action = '売る';
-                state.history.unshift({
-                    time: timeStr,
-                    type: '売却',
-                    name: stock.name,
-                    shares: qty,
-                    price: stock.price,
-                    total: totalCost
-                });
-
-                alert(`${stock.name} を ${qty} 株売却しました。`);
-            }
-
-            saveState();
-            renderDetailView(stock.code);
-
-            // Googleフォームへ「今回の取引1件だけ」を送信。
-            // A列のタイムスタンプはフォーム側で自動生成される。
-            sendTradeRecord({
-                identifier: getTradeIdentifier(),
-                action: action,
-                shares: qty,
-                stock: stock.name,
-                stockCode: stock.code,
-                balance: state.cash,
-                price: stock.price,
-                total: totalCost
-            });
-        }
-
-        function sendTradeRecord(record) {
-            if (RECOVERY_SYSTEM_DEVELOPMENT) return;
-            try {
-                const form = document.getElementById('tradeRecordForm');
-                const identifierInput = document.getElementById('tradeRecordIdentifier');
-                const dataInput = document.getElementById('tradeRecordData');
-                if (!form || !identifierInput || !dataInput) return;
-
-                const identifier = String(record.identifier || getTradeIdentifier());
-
-                // 1回の取引につき「今回の取引」と「その直後の完全なstate」を保存。
-                // これにより、GAS側は最新行だけからも復旧ファイルを生成できます。
-                const data = {
-                    version: '26.1',
-                    identifier: identifier,
-                    savedAt: new Date().toISOString(),
-                    transaction: {
-                        action: String(record.action || ''),
-                        stock: String(record.stock || ''),
-                        stockCode: String(record.stockCode || ''),
-                        shares: Number(record.shares || 0),
-                        price: Number(record.price || 0),
-                        total: Number(record.total || 0),
-                        balance: Number(record.balance || state.cash || 0),
-                        time: String(record.time || new Date().toISOString())
-                    },
-                    state: JSON.parse(JSON.stringify(state))
-                };
-
-                identifierInput.value = identifier;
-                dataInput.value = JSON.stringify(data);
-
-                // Googleフォーム側のA列タイムスタンプは自動記録。
-                form.submit();
-
-                console.log('完全復旧用の取引データをGoogleフォームへ保存しました。');
-            } catch (error) {
-                console.warn('取引履歴のGoogleフォーム送信に失敗しました:', error);
-            }
-        }
-
-        function renderHistory() {
-            const tbody = document.getElementById('history-table-body');
-            tbody.innerHTML = '';
-            if (state.history.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-sub);">取引履歴はありません</td></tr>';
-                return;
-            }
-            state.history.forEach(h => {
-                tbody.innerHTML += `<tr>
-                    <td>${h.time}</td>
-                    <td style="color:${h.type === '買付' ? 'var(--accent-green)' : (h.type === '特典' ? 'var(--accent-gold)' : 'var(--accent-red)')}">${h.type}</td>
-                    <td><b>${h.name}</b></td>
-                    <td>${h.shares.toLocaleString()}</td>
-                    <td>¥${h.price.toLocaleString()}</td>
-                    <td>¥${h.total.toLocaleString()}</td>
-                </tr>`;
-            });
-        }
-
-
-
-        // ===== アクセス情報の記録 =====
-        function getAccessDevice() {
-            const ua = navigator.userAgent.toLowerCase();
-            if (/ipad|tablet/.test(ua)) return 'タブレット';
-            if (/mobi|iphone|ipod|android/.test(ua)) return 'スマートフォン';
-            return 'PC';
-        }
-
-        function getAccessOS() {
-            const ua = navigator.userAgent;
-            if (/windows nt/i.test(ua)) return 'Windows';
-            if (/android/i.test(ua)) return 'Android';
-            if (/iphone|ipad|ipod/i.test(ua)) return 'iOS / iPadOS';
-            if (/mac os x/i.test(ua)) return 'macOS';
-            if (/cros/i.test(ua)) return 'ChromeOS';
-            if (/linux/i.test(ua)) return 'Linux';
-            return 'その他';
-        }
-
-        function getAccessBrowser() {
-            const ua = navigator.userAgent;
-            if (/edg\//i.test(ua)) return 'Microsoft Edge';
-            if (/opr\//i.test(ua) || /opera/i.test(ua)) return 'Opera';
-            if (/chrome\//i.test(ua) && !/edg\//i.test(ua)) return 'Google Chrome';
-            if (/firefox\//i.test(ua)) return 'Mozilla Firefox';
-            if (/safari\//i.test(ua) && !/chrome\//i.test(ua)) return 'Safari';
-            return 'その他';
-        }
-
-        function recordAccessInfo() {
-            try {
-                const form = document.getElementById('accessRecordForm');
-                if (!form) return;
-
-                const now = new Date();
-                const accessDate = now.getFullYear() + '/' +
-                    String(now.getMonth() + 1).padStart(2, '0') + '/' +
-                    String(now.getDate()).padStart(2, '0') + ' ' +
-                    String(now.getHours()).padStart(2, '0') + ':' +
-                    String(now.getMinutes()).padStart(2, '0') + ':' +
-                    String(now.getSeconds()).padStart(2, '0');
-
-                document.getElementById('accessRecordDate').value = accessDate;
-                document.getElementById('accessRecordUrl').value = location.href;
-                document.getElementById('accessRecordTitle').value = document.title;
-                document.getElementById('accessRecordDevice').value = getAccessDevice();
-                document.getElementById('accessRecordOS').value = getAccessOS();
-                document.getElementById('accessRecordBrowser').value = getAccessBrowser();
-
-                form.submit();
-            } catch (e) {
-                console.warn('アクセス情報の記録に失敗しました:', e);
-            }
-        }
-
-        function initAccessRecordNotice() {
-            const notice = document.getElementById('accessRecordNotice');
-            const okButton = document.getElementById('accessRecordOk');
-            const storageKey = 'bainari_access_record_notice_closed';
-
-            recordAccessInfo();
-
-            if (!notice || !okButton) return;
-            if (sessionStorage.getItem(storageKey) === '1') return;
-
-            notice.style.display = 'flex';
-            okButton.addEventListener('click', function () {
-                sessionStorage.setItem(storageKey, '1');
-                notice.style.display = 'none';
-            });
-        }
-
-
-
-        /* ==========================================
-           取引履歴バックアップ / 識別子 / 復旧依頼
-        ========================================== */
-        const TRADE_IDENTIFIER_KEY = 'tradePro_identifier_v1';
-        const TRADE_BACKUP_VERSION = '26.1';
-
-        // 復旧依頼用GoogleフォームのURLをここに設定してください。
-        const RECOVERY_FORM_URL = 'https://forms.gle/9JESWuBCDoH39ehD8';
-        // 復旧システムは現在開発中のため、利用者向けの復旧機能を停止しています。
-        const RECOVERY_SYSTEM_DEVELOPMENT = true;
-
-        function createTradeIdentifier(){
-            const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-            let result='BAI-';
-            const bytes=new Uint8Array(10);
-            if(window.crypto && crypto.getRandomValues){crypto.getRandomValues(bytes);for(let i=0;i<bytes.length;i++)result+=chars[bytes[i]%chars.length];}
-            else{for(let i=0;i<10;i++)result+=chars[Math.floor(Math.random()*chars.length)];}
-            return result;
-        }
-        function getTradeIdentifier(){
-            let id=localStorage.getItem(TRADE_IDENTIFIER_KEY);
-            if(!id){id=createTradeIdentifier();localStorage.setItem(TRADE_IDENTIFIER_KEY,id);}
-            return id;
-        }
-        function initTradeIdentifier(){
-            const id=getTradeIdentifier();
-            const el=document.getElementById('tradeIdentifier');
-            const welcomeEl=document.getElementById('welcomeTradeIdentifier');
-            if(el)el.textContent=id;
-            if(welcomeEl)welcomeEl.textContent=id;
-
-            const welcome=document.getElementById('identifierWelcome');
-            if(welcome && localStorage.getItem('tradePro_identifier_welcome_seen')!=='1'){
-                welcome.style.display='flex';
-            }
-        }
-        function identifierDevelopmentNotice(){alert('識別子機能は現在開発中です。\n\n識別子の表示・コピー・保存は現在ご利用いただけません。\n復旧ファイルの保存・読み込みは引き続きご利用いただけます。');}
-         function copyTradeIdentifier(){
-            const id=getTradeIdentifier();
-            if(navigator.clipboard && navigator.clipboard.writeText){
-                navigator.clipboard.writeText(id).then(()=>{
-                    const s=document.getElementById('identifierSaveStatus');
-                    if(s)s.textContent='📋 コピーしました';
-                }).catch(()=>fallbackCopyIdentifier(id));
-            }else fallbackCopyIdentifier(id);
-        }
-        function fallbackCopyIdentifier(id){
-            const ta=document.createElement('textarea');ta.value=id;document.body.appendChild(ta);ta.select();
-            try{document.execCommand('copy');const s=document.getElementById('identifierSaveStatus');if(s)s.textContent='📋 コピーしました';}catch(e){}
-            ta.remove();
-        }
-        function saveIdentifierText(){
-            const id=getTradeIdentifier();
-            const blob=new Blob(['株シミュレーター 識別子\n\n'+id+'\n\nこの識別子は取引履歴の保存・復旧に使用します。'],{type:'text/plain;charset=utf-8'});
-            const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='株シミュレーター_識別子.txt';document.body.appendChild(a);a.click();a.remove();
-            setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-            const s=document.getElementById('identifierSaveStatus');if(s)s.textContent='💾 保存しました';
-        }
-        function closeIdentifierWelcome(){
-            localStorage.setItem('tradePro_identifier_welcome_seen','1');
-            const welcome=document.getElementById('identifierWelcome');if(welcome)welcome.style.display='none';
-        }
-        function calculateTotalAssetsForBackup(){
-            let stockValue=0;
-            if(state && state.portfolio && Array.isArray(state.stocks)){
-                Object.keys(state.portfolio).forEach(code=>{
-                    const h=state.portfolio[code],stock=state.stocks.find(x=>x.code===code);
-                    if(h&&stock&&Number(h.shares)>0)stockValue+=Number(stock.price||0)*Number(h.shares||0);
-                });
-            }
-            return Number(state.cash||0)+stockValue;
-        }
-        function safeBackupJson(value){try{return JSON.stringify(value);}catch(e){return '[]';}}
-        function backupTradeHistory(){
-            alert('取引履歴は、買う・売る操作を行った時点で1件ずつ自動保存されます。\n\n過去の履歴を再送信する機能は、重複登録を防ぐため無効にしています。');
-        }
-
-        function openRecoveryRequest(){
-            if (RECOVERY_SYSTEM_DEVELOPMENT) { alert('データ復旧システムは現在開発中です。\n\n現在、復旧依頼の受付を停止しています。\n開発完了まで復旧メールは送信されません。'); return; }
-            const id=getTradeIdentifier();
-            if(!RECOVERY_FORM_URL){alert('復旧依頼フォームのURLがまだ設定されていません。\n\n現在の識別子：'+id);return;}
-            try{
-                const url=new URL(RECOVERY_FORM_URL);
-                url.searchParams.set('usp','pp_url');
-                // 復旧フォーム側の識別子entryが判明したら、次の形式で自動入力できます。
-                // url.searchParams.set('entry.123456789',id);
-                window.open(url.toString(),'_blank','noopener,noreferrer');
-            }catch(e){alert('復旧依頼フォームのURL設定を確認してください。');}
-        }
-
-        const originalInitAppForBackup=initApp;
-        initApp=function(){originalInitAppForBackup();initTradeIdentifier();};
-
-        window.addEventListener('load', function () {
-            initApp();
-            initAccessRecordNotice();
-        });
-    </script>
+
+
+        <div class="schedule">
+
+            <div class="schedule-label">
+                実施予定日時
+            </div>
+
+            <div class="schedule-date">
+                2026年9月26日 20:00
+                <span>〜</span>
+                9月27日 07:00頃
+            </div>
+
+            <div class="timeline"></div>
+
+        </div>
+
+    </section>
+
+
+    <section class="details">
+
+        <div class="detail-card">
+
+            <div class="detail-icon">🔧</div>
+
+            <div class="detail-title">
+                VERSION UPDATE
+            </div>
+
+            <p class="detail-text">
+                サービス向上を目的とした
+                システムのバージョンアップおよび
+                各種更新作業を実施しています。
+            </p>
+
+        </div>
+
+
+        <div class="detail-card">
+
+            <div class="detail-icon">⏱️</div>
+
+            <div class="detail-title">
+                作業時間について
+            </div>
+
+            <p class="detail-text">
+                作業状況により、開始・終了時刻が
+                前後する場合がございます。
+                あらかじめご了承ください。
+            </p>
+
+        </div>
+
+    </section>
+
+
+    <section class="notice">
+
+        <div class="notice-icon">⚠️</div>
+
+        <p class="notice-text">
+            <strong>ご利用の皆様へ</strong><br>
+            メンテナンス中は、一時的に株シミュレーターを
+            ご利用いただけない場合がございます。
+            ご不便をおかけいたしますが、
+            ご理解とご了承をいただきますようお願い申し上げます。
+        </p>
+
+    </section>
+
+
+    <footer>
+
+        <div class="footer-main">
+            KABU SIMULATOR
+            &nbsp;•&nbsp;
+            SYSTEM MAINTENANCE
+        </div>
+
+        <div class="footer-sub">
+            VERSION UPDATING...
+        </div>
+
+    </footer>
+
+</main>
+
 </body>
 </html>
