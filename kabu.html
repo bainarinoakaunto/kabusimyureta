@@ -1,9 +1,11 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#10213b">
+<meta name="description" content="株シミュレーターのシステム稼働状況、障害情報、復旧状況をお知らせします。">
 <title>システム稼働状況 | 株シミュレーター</title>
 
 <style>
@@ -16,6 +18,8 @@
     --red: #bd3440;
     --orange: #a45b08;
     --green: #13764b;
+    --navy: #10213b;
+    --blue: #3978d6;
 }
 
 * {
@@ -43,9 +47,14 @@ body {
     line-height: 1.5;
 }
 
+a {
+    -webkit-tap-highlight-color: transparent;
+}
+
 .page {
-    height: 100dvh;
     width: 100%;
+    height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -60,8 +69,8 @@ header {
     gap: 12px;
     padding: 10px clamp(14px, 3vw, 36px);
     color: #fff;
-    background: #10213b;
-    border-bottom: 3px solid #3978d6;
+    background: var(--navy);
+    border-bottom: 3px solid var(--blue);
 }
 
 .brand {
@@ -295,25 +304,47 @@ main {
     color: var(--text);
 }
 
-.refresh {
+.actions {
     flex-shrink: 0;
-    padding: 7px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 7px;
+}
+
+.refresh,
+.pdf-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-height: 34px;
+    padding: 7px 11px;
     border: 1px solid #d5deea;
     border-radius: 6px;
     background: #fff;
     color: var(--text);
+    font-family: inherit;
     font-size: 11px;
     font-weight: 750;
+    text-decoration: none;
     cursor: pointer;
+    white-space: nowrap;
 }
 
-.refresh:hover {
+.refresh:hover,
+.pdf-link:hover {
     background: #edf3fc;
 }
 
 .refresh:disabled {
     opacity: .6;
     cursor: wait;
+}
+
+.pdf-link {
+    border-color: #cbd8f4;
+    color: #244f9e;
 }
 
 footer {
@@ -324,6 +355,12 @@ footer {
     color: var(--muted);
     text-align: center;
     font-size: 9px;
+}
+
+button:focus-visible,
+a:focus-visible {
+    outline: 3px solid #8db5ff;
+    outline-offset: 3px;
 }
 
 @media (max-width: 560px) {
@@ -356,7 +393,7 @@ footer {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
-        gap: 8px;
+        gap: 6px 8px;
         padding: 8px 10px;
     }
 
@@ -406,20 +443,44 @@ footer {
 
     .bottom {
         padding-top: 7px;
+        gap: 5px;
     }
 
     .meta {
         font-size: 9px;
     }
 
-    .refresh {
-        padding: 7px 9px;
-        font-size: 10px;
+    .actions {
+        gap: 5px;
+    }
+
+    .refresh,
+    .pdf-link {
+        min-height: 32px;
+        padding: 6px 7px;
+        font-size: 9px;
     }
 
     footer {
         padding: 5px 8px;
         font-size: 8px;
+    }
+}
+
+@media (max-width: 360px) {
+    .header-label {
+        display: none;
+    }
+
+    .actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .refresh,
+    .pdf-link {
+        min-height: 27px;
+        padding: 4px 6px;
     }
 }
 
@@ -507,12 +568,12 @@ footer {
         </span>
     </div>
 
-    <section class="incident">
+    <section class="incident" aria-label="障害情報">
         <h3>システム障害および復旧対応について</h3>
         <p>
-            現在、大規模なシステム障害が発生しています。
-            諸事情により復旧作業を一時休止しており、
-            データが暗号化されているため、現時点では復旧の目処が立っておりません。
+            現在、システム障害が発生しています。
+            現時点で、第三者による不正アクセスが原因ではないことを確認しています。
+            復旧作業は諸事情により一時休止しており、進展があり次第お知らせします。
         </p>
     </section>
 
@@ -562,6 +623,7 @@ footer {
         <p>
             復旧作業は諸事情により一時休止しています。
             作業の再開時期およびサービスの再開時期は未定です。
+            データが暗号化されているため、復旧の見通しは立っていません。
             状況に進展があり次第、確認できた情報をお知らせします。
         </p>
     </section>
@@ -571,9 +633,20 @@ footer {
             データ取得状態：<strong id="ss-fetch-status">取得確認中</strong><br>
             最終取得日時：<time id="ss-last-updated">未取得</time>
         </div>
-        <button class="refresh" id="ss-refresh" type="button">
-            ↻ 状況を更新
-        </button>
+
+        <div class="actions">
+            <a
+                class="pdf-link"
+                href="https://bainarinoakaunto.github.io/bainariweb/2026:10:9.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="2026年10月9日発行のお詫び文書PDFを開く"
+            >お詫び文書 PDF ↗</a>
+
+            <button class="refresh" id="ss-refresh" type="button">
+                ↻ 更新
+            </button>
+        </div>
     </div>
 </main>
 
@@ -591,6 +664,7 @@ footer {
         "https://bainarinoakaunto.github.io/bainariweb/kadou.json";
 
     const INTERVAL = 30000;
+    const REQUEST_TIMEOUT = 10000;
 
     const systems = [
         {
@@ -775,13 +849,20 @@ footer {
         refreshButton.textContent = "更新中…";
         fetchLabel.textContent = "取得中";
 
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(function () {
+            controller.abort();
+        }, REQUEST_TIMEOUT);
+
         try {
             const separator = STATUS_URL.includes("?") ? "&" : "?";
-            const requestURL = STATUS_URL + separator + "_=" + Date.now();
+            const requestURL =
+                STATUS_URL + separator + "_=" + Date.now();
 
             const response = await fetch(requestURL, {
                 method: "GET",
-                cache: "no-store"
+                cache: "no-store",
+                signal: controller.signal
             });
 
             if (!response.ok) {
@@ -829,9 +910,10 @@ footer {
                 error
             );
         } finally {
+            window.clearTimeout(timeoutId);
             isLoading = false;
             refreshButton.disabled = false;
-            refreshButton.textContent = "↻ 状況を更新";
+            refreshButton.textContent = "↻ 更新";
         }
     }
 
