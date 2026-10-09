@@ -1,23 +1,854 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#10213b">
+<title>システム稼働状況 | 株シミュレーター</title>
 
-<title>接続しています...</title>
+<style>
+:root {
+    --bg: #f2f5fa;
+    --surface: #ffffff;
+    --text: #182943;
+    --muted: #718096;
+    --border: #e1e7ef;
+    --red: #bd3440;
+    --orange: #a45b08;
+    --green: #13764b;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "Noto Sans JP",
+        Meiryo,
+        sans-serif;
+    line-height: 1.5;
+}
+
+.page {
+    height: 100dvh;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+header {
+    flex-shrink: 0;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px clamp(14px, 3vw, 36px);
+    color: #fff;
+    background: #10213b;
+    border-bottom: 3px solid #3978d6;
+}
+
+.brand {
+    min-width: 0;
+}
+
+.brand h1 {
+    margin: 0;
+    font-size: clamp(14px, 2vw, 19px);
+    font-weight: 800;
+}
+
+.brand p {
+    margin: 2px 0 0;
+    color: #b8c8df;
+    font-size: 10px;
+    letter-spacing: .08em;
+}
+
+.header-label {
+    flex-shrink: 0;
+    padding: 5px 9px;
+    border: 1px solid #52647d;
+    border-radius: 5px;
+    font-size: 10px;
+    color: #e2eafa;
+}
+
+main {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: clamp(10px, 2vh, 20px) clamp(12px, 3vw, 30px);
+    display: flex;
+    flex-direction: column;
+    gap: clamp(8px, 1.5vh, 14px);
+    overflow: hidden;
+}
+
+.page-heading {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.page-heading h2 {
+    margin: 0;
+    font-size: clamp(19px, 2.8vw, 27px);
+    line-height: 1.3;
+}
+
+.page-heading p {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: clamp(10px, 1.2vw, 12px);
+}
+
+.live {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--green);
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.dot {
+    width: 7px;
+    height: 7px;
+    flex-shrink: 0;
+    display: inline-block;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.incident {
+    flex-shrink: 0;
+    padding: clamp(10px, 1.6vh, 15px) clamp(12px, 2vw, 18px);
+    border: 1px solid #efc6ca;
+    border-left: 4px solid var(--red);
+    border-radius: 8px;
+    background: #fff7f7;
+}
+
+.incident h3 {
+    margin: 0 0 4px;
+    color: #a82c38;
+    font-size: clamp(12px, 1.5vw, 15px);
+}
+
+.incident p {
+    margin: 0;
+    color: #4b5565;
+    font-size: clamp(10px, 1.25vw, 12px);
+    line-height: 1.65;
+}
+
+.systems {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(7px, 1.3vw, 13px);
+}
+
+.system {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 8px;
+    padding: clamp(10px, 1.5vw, 17px);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--surface);
+}
+
+.system.temporary {
+    border-color: #e8d6b1;
+    background: #fffdfa;
+}
+
+.system-type {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--muted);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .06em;
+}
+
+.temporary .system-type {
+    color: var(--orange);
+}
+
+.system h3 {
+    margin: 0;
+    font-size: clamp(11px, 1.35vw, 14px);
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    align-self: flex-start;
+    max-width: 100%;
+    padding: 5px 8px;
+    border-radius: 5px;
+    background: #edf0f4;
+    color: #59677a;
+    font-size: clamp(10px, 1.1vw, 12px);
+    font-weight: 800;
+    overflow-wrap: anywhere;
+}
+
+.status.down {
+    background: #fff0f0;
+    color: var(--red);
+}
+
+.status.warning {
+    background: #fff3df;
+    color: var(--orange);
+}
+
+.status.ok {
+    background: #e8f7ef;
+    color: var(--green);
+}
+
+.status.unknown {
+    background: #edf0f4;
+    color: #59677a;
+}
+
+.system-detail {
+    margin: 0;
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.recovery {
+    flex-shrink: 0;
+    padding: clamp(9px, 1.5vh, 13px) 15px;
+    border: 1px solid #e8d6b1;
+    border-radius: 8px;
+    background: #fffbf3;
+}
+
+.recovery h3 {
+    margin: 0 0 3px;
+    color: var(--orange);
+    font-size: 12px;
+}
+
+.recovery p {
+    margin: 0;
+    color: #4b5565;
+    font-size: 10px;
+    line-height: 1.6;
+}
+
+.bottom {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding-top: 9px;
+    border-top: 1px solid var(--border);
+}
+
+.meta {
+    min-width: 0;
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+}
+
+.meta strong {
+    color: var(--text);
+}
+
+.refresh {
+    flex-shrink: 0;
+    padding: 7px 12px;
+    border: 1px solid #d5deea;
+    border-radius: 6px;
+    background: #fff;
+    color: var(--text);
+    font-size: 11px;
+    font-weight: 750;
+    cursor: pointer;
+}
+
+.refresh:hover {
+    background: #edf3fc;
+}
+
+.refresh:disabled {
+    opacity: .6;
+    cursor: wait;
+}
+
+footer {
+    flex-shrink: 0;
+    padding: 8px 14px;
+    background: #fff;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    text-align: center;
+    font-size: 9px;
+}
+
+@media (max-width: 560px) {
+    header {
+        min-height: 52px;
+        padding: 8px 12px;
+    }
+
+    .header-label {
+        font-size: 8px;
+        padding: 4px 6px;
+    }
+
+    main {
+        padding: 10px;
+        gap: 8px;
+    }
+
+    .page-heading p {
+        max-width: 260px;
+    }
+
+    .systems {
+        grid-template-columns: 1fr;
+        grid-template-rows: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+    }
+
+    .system {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+    }
+
+    .system-type {
+        margin-bottom: 2px;
+        font-size: 8px;
+    }
+
+    .system h3 {
+        font-size: 11px;
+    }
+
+    .system-detail {
+        grid-column: 1 / -1;
+        margin-top: -5px;
+        font-size: 9px;
+    }
+
+    .status {
+        font-size: 9px;
+        padding: 4px 6px;
+    }
+
+    .incident {
+        padding: 9px 11px;
+    }
+
+    .incident h3 {
+        font-size: 11px;
+    }
+
+    .incident p {
+        font-size: 10px;
+    }
+
+    .recovery {
+        padding: 8px 10px;
+    }
+
+    .recovery h3 {
+        font-size: 11px;
+    }
+
+    .recovery p {
+        font-size: 9px;
+    }
+
+    .bottom {
+        padding-top: 7px;
+    }
+
+    .meta {
+        font-size: 9px;
+    }
+
+    .refresh {
+        padding: 7px 9px;
+        font-size: 10px;
+    }
+
+    footer {
+        padding: 5px 8px;
+        font-size: 8px;
+    }
+}
+
+@media (max-height: 650px) {
+    header {
+        min-height: 46px;
+        padding-top: 5px;
+        padding-bottom: 5px;
+    }
+
+    main {
+        padding-top: 7px;
+        padding-bottom: 7px;
+        gap: 6px;
+    }
+
+    .page-heading p {
+        margin-top: 2px;
+    }
+
+    .incident {
+        padding-top: 7px;
+        padding-bottom: 7px;
+    }
+
+    .incident p {
+        line-height: 1.45;
+    }
+
+    .system {
+        padding: 9px;
+        gap: 5px;
+    }
+
+    .recovery {
+        padding-top: 6px;
+        padding-bottom: 6px;
+    }
+
+    .recovery p {
+        line-height: 1.4;
+    }
+
+    .bottom {
+        padding-top: 5px;
+    }
+
+    footer {
+        padding-top: 4px;
+        padding-bottom: 4px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+</style>
+</head>
+
+<body>
+<div class="page">
+
+<header>
+    <div class="brand">
+        <h1>株シミュレーター</h1>
+        <p>SYSTEM STATUS CENTER</p>
+    </div>
+    <span class="header-label">SYSTEM INFORMATION</span>
+</header>
+
+<main>
+    <div class="page-heading">
+        <div>
+            <h2>システム稼働状況</h2>
+            <p>関連システムの稼働情報・障害・復旧状況</p>
+        </div>
+        <span class="live">
+            <span class="dot"></span>
+            自動更新
+        </span>
+    </div>
+
+    <section class="incident">
+        <h3>システム障害および復旧対応について</h3>
+        <p>
+            現在、システム障害が発生しています。
+            諸事情により復旧作業を一時休止しており、
+            データが暗号化されているため、現時点では復旧の目処が立っておりません。
+        </p>
+    </section>
+
+    <section class="systems" aria-label="システム一覧">
+        <article class="system temporary">
+            <div>
+                <span class="system-type">TEMPORARY SYSTEM</span>
+                <h3>[臨時] 株シミュレーター管理システムサーバー</h3>
+            </div>
+            <span class="status unknown" id="ss-rinzikabu" role="status">
+                <span class="dot"></span>取得中
+            </span>
+            <p class="system-detail" id="ss-rinzikabu-detail">
+                稼働状況を確認しています。
+            </p>
+        </article>
+
+        <article class="system">
+            <div>
+                <span class="system-type">SERVER</span>
+                <h3>株シミュレーター管理サーバー</h3>
+            </div>
+            <span class="status unknown" id="ss-stockServer" role="status">
+                <span class="dot"></span>取得中
+            </span>
+            <p class="system-detail" id="ss-stockServer-detail">
+                稼働状況を確認しています。
+            </p>
+        </article>
+
+        <article class="system">
+            <div>
+                <span class="system-type">APPLICATION</span>
+                <h3>株シミュレーター 26.1</h3>
+            </div>
+            <span class="status unknown" id="ss-kabu" role="status">
+                <span class="dot"></span>取得中
+            </span>
+            <p class="system-detail" id="ss-kabu-detail">
+                稼働状況を確認しています。
+            </p>
+        </article>
+    </section>
+
+    <section class="recovery">
+        <h3>復旧状況・今後の対応</h3>
+        <p>
+            復旧作業は諸事情により一時休止しています。
+            作業の再開時期およびサービスの再開時期は未定です。
+            状況に進展があり次第、確認できた情報をお知らせします。
+        </p>
+    </section>
+
+    <div class="bottom">
+        <div class="meta">
+            データ取得状態：<strong id="ss-fetch-status">取得確認中</strong><br>
+            最終取得日時：<time id="ss-last-updated">未取得</time>
+        </div>
+        <button class="refresh" id="ss-refresh" type="button">
+            ↻ 状況を更新
+        </button>
+    </div>
+</main>
+
+<footer>
+    株シミュレーター ｜ SYSTEM STATUS INFORMATION ｜ 自動更新：30秒間隔
+</footer>
+
+</div>
 
 <script>
-window.location.replace(
-    "https://kabu.by.com/syumire-ta-"
-);
+(function () {
+    "use strict";
+
+    const STATUS_URL =
+        "https://bainarinoakaunto.github.io/bainariweb/kadou.json";
+
+    const INTERVAL = 30000;
+
+    const systems = [
+        {
+            key: "rinzikabu",
+            badge: "ss-rinzikabu",
+            detail: "ss-rinzikabu-detail"
+        },
+        {
+            key: "stockServer",
+            badge: "ss-stockServer",
+            detail: "ss-stockServer-detail"
+        },
+        {
+            key: "kabu",
+            badge: "ss-kabu",
+            detail: "ss-kabu-detail"
+        }
+    ];
+
+    const fetchLabel = document.getElementById("ss-fetch-status");
+    const updatedLabel = document.getElementById("ss-last-updated");
+    const refreshButton = document.getElementById("ss-refresh");
+
+    let isLoading = false;
+    let timer = null;
+
+    function formatDate(date) {
+        return new Intl.DateTimeFormat("ja-JP", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false
+        }).format(date);
+    }
+
+    function setBadge(element, label, type) {
+        element.className = "status " + type;
+
+        const dot = document.createElement("span");
+        dot.className = "dot";
+
+        const text = document.createElement("span");
+        text.textContent = label;
+
+        element.replaceChildren(dot, text);
+    }
+
+    function getEntry(data, key) {
+        if (!data || typeof data !== "object") {
+            return undefined;
+        }
+
+        if (Object.prototype.hasOwnProperty.call(data, key)) {
+            return data[key];
+        }
+
+        if (
+            data.status &&
+            typeof data.status === "object" &&
+            Object.prototype.hasOwnProperty.call(data.status, key)
+        ) {
+            return data.status[key];
+        }
+
+        if (
+            data.systems &&
+            typeof data.systems === "object" &&
+            Object.prototype.hasOwnProperty.call(data.systems, key)
+        ) {
+            return data.systems[key];
+        }
+
+        return undefined;
+    }
+
+    function getStatusText(value) {
+        if (value === null || value === undefined) {
+            return "";
+        }
+
+        if (typeof value === "object") {
+            const candidates = [
+                value.status,
+                value.state,
+                value.message,
+                value.value
+            ];
+
+            for (const candidate of candidates) {
+                if (
+                    typeof candidate === "string" ||
+                    typeof candidate === "number"
+                ) {
+                    return String(candidate).trim();
+                }
+            }
+
+            return "";
+        }
+
+        return String(value).trim();
+    }
+
+    function classifyStatus(status) {
+        const text = status.toLowerCase();
+
+        if (!text) {
+            return {
+                label: "状態不明",
+                type: "unknown",
+                detail: "ステータスの値が空です。"
+            };
+        }
+
+        if (/メンテナンス|保守作業|作業中|一時休止|maintenance/.test(text)) {
+            return {
+                label: status,
+                type: "warning",
+                detail: "メンテナンスまたは一時休止の状態です。"
+            };
+        }
+
+        if (/接続不可|停止|障害|異常|利用不可|ダウン|error|offline|outage|down|failed/.test(text)) {
+            return {
+                label: status,
+                type: "down",
+                detail: "接続またはサービスに問題が発生している状態です。"
+            };
+        }
+
+        if (/正常|稼働中|稼働|運用中|利用可能|接続中|online|healthy|operational|available|ok/.test(text)) {
+            return {
+                label: status,
+                type: "ok",
+                detail: "公開されているステータスは正常を示しています。"
+            };
+        }
+
+        return {
+            label: status,
+            type: "unknown",
+            detail: "公開されているステータスを表示しています。"
+        };
+    }
+
+    function showMissing(system) {
+        setBadge(
+            document.getElementById(system.badge),
+            "項目なし",
+            "unknown"
+        );
+
+        document.getElementById(system.detail).textContent =
+            "JSON内に「" + system.key + "」が見つかりません。";
+    }
+
+    function showError() {
+        systems.forEach(function (system) {
+            setBadge(
+                document.getElementById(system.badge),
+                "取得失敗",
+                "unknown"
+            );
+
+            document.getElementById(system.detail).textContent =
+                "稼働状況を取得できません。通信状態を確認してください。";
+        });
+
+        fetchLabel.textContent = "取得失敗";
+    }
+
+    async function updateStatus() {
+        if (isLoading) {
+            return;
+        }
+
+        isLoading = true;
+        refreshButton.disabled = true;
+        refreshButton.textContent = "更新中…";
+        fetchLabel.textContent = "取得中";
+
+        try {
+            const separator = STATUS_URL.includes("?") ? "&" : "?";
+            const requestURL = STATUS_URL + separator + "_=" + Date.now();
+
+            const response = await fetch(requestURL, {
+                method: "GET",
+                cache: "no-store"
+            });
+
+            if (!response.ok) {
+                throw new Error("HTTP " + response.status);
+            }
+
+            const data = await response.json();
+
+            if (!data || typeof data !== "object") {
+                throw new Error("JSON形式が正しくありません");
+            }
+
+            systems.forEach(function (system) {
+                const rawValue = getEntry(data, system.key);
+
+                if (rawValue === undefined) {
+                    showMissing(system);
+                    return;
+                }
+
+                const status = getStatusText(rawValue);
+                const result = classifyStatus(status);
+
+                setBadge(
+                    document.getElementById(system.badge),
+                    result.label,
+                    result.type
+                );
+
+                document.getElementById(system.detail).textContent =
+                    result.detail;
+            });
+
+            const now = new Date();
+
+            updatedLabel.textContent = formatDate(now);
+            updatedLabel.dateTime = now.toISOString();
+            fetchLabel.textContent = "取得成功";
+
+        } catch (error) {
+            showError();
+
+            console.error(
+                "[株シミュレーター稼働状況]",
+                error
+            );
+        } finally {
+            isLoading = false;
+            refreshButton.disabled = false;
+            refreshButton.textContent = "↻ 状況を更新";
+        }
+    }
+
+    refreshButton.addEventListener("click", updateStatus);
+
+    updateStatus();
+
+    timer = window.setInterval(updateStatus, INTERVAL);
+
+    window.addEventListener("pagehide", function () {
+        if (timer !== null) {
+            window.clearInterval(timer);
+            timer = null;
+        }
+    });
+})();
 </script>
-
-<noscript>
-<meta http-equiv="refresh"
-      content="0;url=https://kabu.by.com/syumire-ta-">
-</noscript>
-
-</head>
-<body>
 </body>
 </html>
